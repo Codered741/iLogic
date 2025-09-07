@@ -1,7 +1,11 @@
+'AUTHOR: Cody Redding
+'CONTACT: codered741@gmail.com
+
 	'Purpose: Execute title block swap on all drawings that are needed for each park of the SMLYDKMK Project
 
 Imports System.IO
 Imports System.IO.Path
+Imports System.Text
 Imports System.Collections
 Imports System.Windows.Forms
 Imports My.Computer.FileSystem
@@ -9,6 +13,14 @@ Imports My.Computer.FileSystem
 Sub Main()
 
 	On Error Resume Next 'GoTo errhandle
+	
+	'read in the path to the templates and test that it Exists
+	dim strTemplatesPath as String = getTemplatesFolderPath()
+	'messagebox.show(strTemplatesPath)
+	If strTemplatesPath.Length = 0 Then
+		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		Exit sub
+	End if
 	
 	'Deactivate Vault Addin
 	Dim VaultAddin As Inventor.ApplicationAddIn = ThisApplication.ApplicationAddIns.ItemById("{48B682BC-42E6-4953-84C5-3D253B52E77B}")
@@ -92,15 +104,15 @@ Sub Main()
 	
 	Select Case ParkSelect
 	Case ParkList(0) 'Osaka
-		TemplateFile = "C:\_vaultWIP\Designs\Templates\Universal\US_JAPAN\_USJ_STANDARD TEMPLATE_SIZE B_11x17.idw"
+		TemplateFile = strTemplatesPath + "Universal\US_JAPAN\_USJ_STANDARD TEMPLATE_SIZE B_11x17.idw"
 		TemplateTBName1 = "UNIVERSAL JAPAN MAIN SHEET"
 		TemplateTBName2 = "UNIVERSAL JAPAN 2ND SHEET"
 	Case ParkList(1) 'Hollywood
-		TemplateFile = "C:\_vaultWIP\Designs\Templates\Universal\US_HOLLYWOOD\_USH_STANDARD TEMPLATE_SIZE B_11x17.idw"
+		TemplateFile = strTemplatesPath + "Universal\US_HOLLYWOOD\_USH_STANDARD TEMPLATE_SIZE B_11x17.idw"
 		TemplateTBName1 = "UNIVERSAL HOLLYWOOD MAIN SHEET"
 		TemplateTBName2 = "UNIVERSAL HOLLYWOOD 2ND SHEET"
 	Case ParkList(2) 'Orlando
-		TemplateFile = "C:\_vaultWIP\Designs\Templates\Universal\US_FLORIDA\_USF_STANDARD TEMPLATE_SIZE B_11x17.idw"
+		TemplateFile = strTemplatesPath + "Universal\US_FLORIDA\_USF_STANDARD TEMPLATE_SIZE B_11x17.idw"
 		TemplateTBName1 = "UNIVERSAL FLORIDA MAIN SHEET"
 		TemplateTBName2 = "UNIVERSAL FLORIDA 2ND SHEET"
 	End Select
@@ -376,3 +388,23 @@ Function DocumentFileName(Doc As String) As String
 	DocumentFileName = Left(Doc, Doc.Length - 4)
 	'MsgBox(DocumentFileName)
 End Function 'DocumentFileName
+
+Function getTemplatesFolderPath () as string
+	
+	Dim invTempLoc as String = "C:\_vaultWIP\inv_Templates_Path.txt"
+	
+	If System.IO.File.Exists(invTempLoc)
+		Dim oRead as new StreamReader(invTempLoc)
+	
+		Try 
+			return oRead.ReadLine()
+		Catch
+			return 0
+		End Try
+		
+	Else
+		'MessageBox.Show("The template path reference could not be found. ","File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		return 0
+	End if
+	
+End Function

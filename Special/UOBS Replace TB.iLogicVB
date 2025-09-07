@@ -1,6 +1,11 @@
 Imports System.Collections.Generic
 'code taken and modified from:
 'http://adndevblog.typepad.com/manufacturing/2015/01/add-external-ilogic-rule-to-event-trigger.html
+'edited and customized by Cody Redding 
+
+Imports System.IO
+Imports System.Text
+
 
 Sub Main
 
@@ -8,6 +13,14 @@ Sub Main
 	Dim oTemplate As String 
 	Dim oDoc as Document = ThisApplication.ActiveDocument
 	Dim oModelDoc as Document' = oDoc.AllReferencedDocuments.Item(1)
+	
+	'read in the path to the templates and test that it Exists
+	dim strTemplatesPath as String = getTemplatesFolderPath()
+	'messagebox.show(strTemplatesPath)
+	If strTemplatesPath.Length = 0 Then
+		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		Exit sub
+	End if
 	
 	Try
 		oModelDoc = oDoc.AllReferencedDocuments.Item(1)
@@ -39,9 +52,11 @@ Sub Main
 	SharedVariable("LogVar") = "UOBS Replace TB"
 	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
 	
+	
+	
 	'check file type 
 	If oDoc.DocumentType = kDrawingDocumentObject Then
-		oTemplate = "C:\_vaultWIP\Designs\Templates\Universal\US_FLORIDA\Universal Orlando Bourne.dwg"		'file to copy events from
+		oTemplate = strTemplatesPath + "Universal\US_FLORIDA\Universal Orlando Bourne.dwg"		'file to copy events from
 	'ElseIf oDoc.DocumentType = kPartDocumentObject Then
 		'oTemplate = "\\server\departments\CAD\Inventor\Templates\Standard.ipt"   'file to copy events from
 	Else
@@ -119,7 +134,7 @@ Sub Main
 				oSheet.Border.Delete
 				oSheet.AddBorder(oBorderDef)
 				oSheet.TitleBlock.Delete
-				oSheet.AddTitleBlock(oAddPageDef) 
+				oSheet.AddTitleBlock(oAddPageDef)
 				
 			End If
 		Next
@@ -178,3 +193,23 @@ Public Sub InsertSketchedSymbolOnSheet(oDrawDoc as Document, SymbolName as Strin
 
     Dim oSketchedSymbol As SketchedSymbol = oSheet.SketchedSymbols.Add(oSketchedSymbolDef, oPoint, 0, 1)
 End Sub
+
+Function getTemplatesFolderPath () as string
+	
+	Dim invTempLoc as String = "C:\_vaultWIP\inv_Templates_Path.txt"
+	
+	If System.IO.File.Exists(invTempLoc)
+		Dim oRead as new StreamReader(invTempLoc)
+	
+		Try 
+			return oRead.ReadLine()
+		Catch
+			return 0
+		End Try
+		
+	Else
+		'MessageBox.Show("The template path reference could not be found. ","File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		return 0
+	End if
+	
+End Function

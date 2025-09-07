@@ -1,9 +1,22 @@
 Imports System.Collections.Generic
+Imports System.IO
+Imports System.Text
+
 'code taken and modified from:
 'http://adndevblog.typepad.com/manufacturing/2015/01/add-external-ilogic-rule-to-event-trigger.html
 
 Sub Main
-	Dim TemplateFilePath as String = "C:\_vaultWIP\Designs\Templates\Disney\Project KAPPA dwg template.dwg"
+
+	'read in the path to the templates and test that it Exists
+	dim strTemplatesPath as String = getTemplatesFolderPath()
+	'messagebox.show(strTemplatesPath)
+	If strTemplatesPath.Length = 0 Then
+		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		Exit sub
+	End if
+	
+	
+	Dim TemplateFilePath as String = strTemplatesPath + "Disney\Project KAPPA dwg template.dwg"
 	Dim TBName as String = "PROJECT KAPPA"
 	Dim BdrName as String = "PROJECT KAPPA BORDER"
 	Dim oTemplateDoc As Document
@@ -180,3 +193,23 @@ Public Sub InsertSketchedSymbolOnSheet(oDrawDoc as Document, SymbolName as Strin
 
     Dim oSketchedSymbol As SketchedSymbol = oSheet.SketchedSymbols.Add(oSketchedSymbolDef, oPoint, 0, 1)
 End Sub
+
+Function getTemplatesFolderPath () as string
+	
+	Dim invTempLoc as String = "C:\_vaultWIP\inv_Templates_Path.txt"
+	
+	If System.IO.File.Exists(invTempLoc)
+		Dim oRead as new StreamReader(invTempLoc)
+	
+		Try 
+			return oRead.ReadLine()
+		Catch
+			return 0
+		End Try
+		
+	Else
+		'MessageBox.Show("The template path reference could not be found. ","File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		return 0
+	End if
+	
+End Function
