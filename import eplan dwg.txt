@@ -1,7 +1,7 @@
-Sub Main()
+﻿Sub Main()
 	
 	SharedVariable("LogVar") = "Import Eplan DWG"
-	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")
 	
 	
 	
@@ -42,29 +42,29 @@ Sub Main()
 	Dim SheetCount As Long
 	SheetCount = oSheets.Count
 	
-	Dim oFiles as New List(Of String)
+	Dim oFiles As New List(Of String)
 	
-	Dim AddedSheets as Long
+	Dim AddedSheets As Long
 	'AddedSheets = oFiles.Count
 
 	Dim oSheet As Sheet
 	oSheet = oDoc.Sheets.Item(SheetCount)
 	
 	'Configure dialog for file selection
-	Dim oFileDlg As inventor.FileDialog = Nothing
+	Dim oFileDlg As Inventor.FileDialog = Nothing
 	InventorVb.Application.CreateFileDialog(oFileDlg)
 	oFileDlg.Filter = "DWG\DXF Files (*.dwg;*.dxf)|*.dwg;*.dxf"'|All Files (*.*)|*.*"
 	oFileDlg.DialogTitle = "Select File(s) to Import"
-	oFileDlg.InitialDirectory = "\\tait-ltz-eplan1\EPLAN\export_dxf\"
+	oFileDlg.InitialDirectory = "\\tait-ltz-eplan01\Data\Dxf_Dwg\"
 	oFileDlg.CancelError = False
-	oFileDlg.MultiSelectEnabled = True
+	oFileDlg.MultiSelectEnabled = (True)
 	
 	'Open Dialog
 	oFileDlg.ShowOpen()
 
 	If oFileDlg.FileName <> "" Then
 
-		Dim fNames as Object
+		Dim fNames As Object
 		fNames = Split(oFileDlg.FileName, "|")
 
 		Dim curName As Object
@@ -81,8 +81,8 @@ Sub Main()
 	
 	'Prompt user for sheet titles
 	Dim usrNamedSheets 
-	Dim usrIndNameSheets as String = ""
-	Dim usrSkipName as Boolean = True
+	Dim usrIndNameSheets As String = ""
+	Dim usrSkipName As Boolean = True
 	
 	usrNamedSheets = MessageBox.Show("Would you like to name the sheets manually?", "Sheet Naming", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
 	
@@ -166,7 +166,7 @@ Sub Main()
 
 End Sub	
 	
-Function isDwg(ThisDoc as Document)
+Function isDwg(ThisDoc As Document)
 	Debug.Print (ThisDoc.DocumentType)
 	
 	If ThisDoc.DocumentType = kDrawingDocumentObject

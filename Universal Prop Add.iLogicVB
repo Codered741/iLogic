@@ -1,31 +1,111 @@
-Sub Main()
+﻿Sub Main()
 
 	SharedVariable("LogVar") = "Universal Prop Add"
 	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
 	
-	Dim UNVSTDProps As New List(of String)
+
+	Dim UNVSTDProps As New List(Of String)
 	Dim UNVStrParams As New List(of String)
+	Dim XLsht As String
+	Dim XLpth As String
+	
+'	Dim oDoc As Document = ThisApplication.ActiveEditDocument 
+'	If oDoc.DocumentType = 12291 Then 'kAssemblyDocumentObject
+'		oCompDef = CType(oDoc.ComponentDefinition, AssemblyComponentDefinition)
+'	Else If oDoc.DocumentType = 12290 Then 'kPartDocumentObject
+'		oCompDef = CType(oDoc.ComponentDefinition, PartComponentDefinition)
+'	End If	
+	
+	
 	
 	UNVSTDProps.Add("NextAssy")
 	UNVSTDProps.Add("UsedOn")
 	UNVSTDProps.Add("Project Number")
 	UNVSTDProps.Add("Material")
 	UNVSTDProps.Add("Building Number")
-	
+	UNVSTDProps.Add("Phase")
+	UNVSTDProps.Add("DesignLevel")
+	UNVSTDProps.Add("JobNum")
+	UNVSTDProps.Add("Show Desc")
+	UNVSTDProps.Add("Show Num")
+	UNVSTDProps.Add("Element Desc")
+	UNVSTDProps.Add("Element Num")
+	UNVSTDProps.Add("Kit Desc")
+	UNVSTDProps.Add("Kit Num")
+	UNVSTDProps.Add("REV 0 DATE")
+	UNVSTDProps.Add("REV 0 BY")
+	UNVSTDProps.Add("REV 0 APPROVED BY")
+	UNVSTDProps.Add("REV 0 DESCRIPTION")
+	UNVSTDProps.Add("REV 1 DATE")
+	UNVSTDProps.Add("REV 1 BY")
+	UNVSTDProps.Add("REV 1 APPROVED BY")
+	UNVSTDProps.Add("REV 1 DESCRIPTION")
+	UNVSTDProps.Add("REV 2 DATE")
+	UNVSTDProps.Add("REV 2 BY")
+	UNVSTDProps.Add("REV 2 APPROVED BY")
+	UNVSTDProps.Add("REV 2 DESCRIPTION")
+	UNVSTDProps.Add("REV 3 DATE")
+	UNVSTDProps.Add("REV 3 BY")
+	UNVSTDProps.Add("REV 3 APPROVED BY")
+	UNVSTDProps.Add("REV 3 DESCRIPTION")
+	UNVSTDProps.Add("REV 4 DATE")
+	UNVSTDProps.Add("REV 4 BY")
+	UNVSTDProps.Add("REV 4 APPROVED BY")
+	UNVSTDProps.Add("REV 4 DESCRIPTION")
+	UNVSTDProps.Add("REV 5 DATE")
+	UNVSTDProps.Add("REV 5 BY")
+	UNVSTDProps.Add("REV 5 APPROVED BY")
+	UNVSTDProps.Add("REV 5 DESCRIPTION")
+	UNVSTDProps.Add("REV 6 DATE")
+	UNVSTDProps.Add("REV 6 BY")
+	UNVSTDProps.Add("REV 6 APPROVED BY")
+	UNVSTDProps.Add("REV 6 DESCRIPTION")
+
+
 	PropAdd(UNVSTDProps)
 	
 	'Parameter Setup
 	UNVStrParams.Add("ProjectNum")
+	UNVStrParams.Add("Show")
+	UNVStrParams.Add("Show_Desc")
+	UNVStrParams.Add("Element")
+	UNVStrParams.Add("Element_Desc")
+	UNVStrParams.Add("Kit")
+	UNVStrParams.Add("Kit_Desc")
+	UNVStrParams.Add("DPhase")
+	UNVStrParams.Add("DesignLevel")
+	UNVStrParams.Add("REV_0_BY")
+	UNVStrParams.Add("REV_0_APR")
+	UNVStrParams.Add("REV_1_BY")
+	UNVStrParams.Add("REV_1_APR")
+	UNVStrParams.Add("REV_2_BY")
+	UNVStrParams.Add("REV_2_APR")
+	UNVStrParams.Add("REV_3_BY")
+	UNVStrParams.Add("REV_3_APR")
+	UNVStrParams.Add("REV_4_BY")
+	UNVStrParams.Add("REV_4_APR")
+	UNVStrParams.Add("REV_5_BY")
+	UNVStrParams.Add("REV_5_APR")
+	UNVStrParams.Add("REV_6_BY")
+	UNVStrParams.Add("REV_6_APR")
+	UNVStrParams.Add("DES_BY")
+	UNVStrParams.Add("APR_BY")
+	UNVStrParams.Add("CHK_BY")
 	
 	ParamAdd(UNVStrParams, "TXT")
 	
-	'MultiValue.SetList(UNVStrParams(0), "Collapsing Tower", "Mariner", "Jetski Launcher", "Masking Curtain", "Seaplane Launcher")
+	iLogicVb.RunExternalRule("Universal Code Injector")
+		
 
-	iProperties.Value("Project", "Vendor") = "TAIT"
-	
 End Sub
 
-Public Sub PropAdd(Props as List(Of String))
+
+
+
+
+
+
+Public Sub PropAdd(Props As List(Of String))
 	'Init
 	Dim oDoc As Document = ThisApplication.ActiveDocument
 	customPropertySet = ThisDoc.Document.PropertySets.Item("Inventor User Defined Properties")
@@ -73,7 +153,7 @@ Public Sub ParamAdd(Params As List(Of String), UnitType As String)
 			Catch
 				oMyParameter=oCompDef.Parameters.UserParameters
 				oParameter=oMyParameter.AddByValue(pmtr, " ", UnitsTypeEnum.kTextUnits)
-				MultiValue.SetList(pmtr, "Collapsing Tower", "Mariner", "Jetski Launcher", "Masking Curtain", "Seaplane Launcher", "Lakitu Marquee", "Hovering Propeller", "Chain Chomp", "Chandelier", "Airship Propeller", "Small Piranha Plant", "Side Thwomp", "Bounce Pad w/Props")
+				'MultiValue.SetList(pmtr, "Collapsing Tower", "Mariner", "Jetski Launcher", "Masking Curtain", "Seaplane Launcher", "Lakitu Marquee", "Hovering Propeller", "Chain Chomp", "Chandelier", "Airship Propeller", "Small Piranha Plant", "Side Thwomp", "Bounce Pad w/Props")
 			End Try
 		Next 
 	Else If UnitType = "UL" Then

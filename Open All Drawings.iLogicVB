@@ -47,7 +47,9 @@ Sub Main()
 	
 		'get list of part numbers from Structured BOM
 		GetDocsFromBOM(ThisApplication.ActiveDocument, BOMDocs)
-msgbox("check")		
+		
+		
+		
 		' Dim DocCount = oRefDocs.Count
 		 oProgressBar = ThisApplication.CreateProgressBar(False, BOMDocs.Count, "Finding Drawings...")
 
@@ -96,7 +98,6 @@ msgbox("check")
 		' For Each DWG In lstDrawings
 			' ThisApplication.Documents.Open(ThisApplication.Documents.ItemByName(DWG))
 		 Next
-		 
 		oProgressBar.Close
 		
 	Catch Ex as Exception
@@ -122,11 +123,11 @@ Sub GetDocsFromBOM(oDoc as Document, ByRef BOMDocs as List(of String))
 	
 	Dim oDocBOM As BOM = oDoc.ComponentDefinition.BOM
 	
-	Dim oBOMView as BOMView = oDocBOM.BOMViews.Item("Structured")
-	
 	oDocBOM.StructuredViewEnabled = True
 	oDocBOM.StructuredViewFirstLevelOnly = False
 	oDocBOM.PartsOnlyViewEnabled = False
+	
+	Dim oBOMView as BOMView = oDocBOM.BOMViews.Item("Structured")
 	
 	Dim oBOMRows As BOMRowsEnumerator = oBOMView.BOMRows
 	Dim oCompDef As ComponentDefinition

@@ -1,32 +1,68 @@
-
+﻿
 	SharedVariable("LogVar") = "Universal Config"
 	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
 	
-Dim ProjNumName As String = Parameter("ProjectNum")
-Dim ProjNumValue As String 
+'Dim ProjNumName As String = Parameter("ProjectNum")
+'Dim ProjNumValue As String 
 Dim err as Boolean = False
 
-Select Case ProjNumName
-'"Collapsing Tower", "Mariner", "Jetski Launcher", "Masking Curtain", "Seaplane Launcher")
-    Case "Collapsing Tower" : ProjNumValue = "713-301-201-SHA-SAE-12"
-    Case "Mariner" : ProjNumValue = "713-301-201-SHA-SAE-11"
-    Case "Jetski Launcher" : ProjNumValue = "713-301-201-SHA-SAE-02"
-    Case "Masking Curtain" : ProjNumValue = "713-301-201-SHA-SAE-04"
-	Case "Seaplane Launcher" : ProjNumValue = "713-301-201-SHA-SAE-05"
-	Case "Lakitu Marquee" : ProjNumValue = "SAE-SC02-02"
-	Case "Hovering Propeller" : ProjNumValue = "SAE-SC08-02"
-	Case "Chain Chomp" : ProjNumValue = "SAE-SC03-02"
-	Case "Chandelier" : ProjNumValue = "SAE-SC07-02"
-	Case "Airship Propeller" : ProjNumValue = "SAE-SC09-02/03"
-	Case "Small Piranha Plant" : ProjNumValue = "SAE-SC04-01"
-	Case "Side Thwomp" : ProjNumValue = "SAE-SC03-04"
-	Case "Bounce Pad w/Props" : ProjNumValue = "SAE-SC08-04"
-	Case Else 
-		MessageBox.Show("Element Name is not valid.  ", "Universal Config")
-		err = True
-End Select
+'Select Case ProjNumName
+''"Collapsing Tower", "Mariner", "Jetski Launcher", "Masking Curtain", "Seaplane Launcher")
+'    Case "Collapsing Tower" : ProjNumValue = "713-301-201-SHA-SAE-12"
+'    Case "Mariner" : ProjNumValue = "713-301-201-SHA-SAE-11"
+'    Case "Jetski Launcher" : ProjNumValue = "713-301-201-SHA-SAE-02"
+'    Case "Masking Curtain" : ProjNumValue = "713-301-201-SHA-SAE-04"
+'	Case "Seaplane Launcher" : ProjNumValue = "713-301-201-SHA-SAE-05"
+'	Case "Lakitu Marquee" : ProjNumValue = "SAE-SC02-02"
+'	Case "Hovering Propeller" : ProjNumValue = "SAE-SC08-02"
+'	Case "Chain Chomp" : ProjNumValue = "SAE-SC03-02"
+'	Case "Chandelier" : ProjNumValue = "SAE-SC07-02"
+'	Case "Airship Propeller" : ProjNumValue = "SAE-SC09-02/03"
+'	Case "Small Piranha Plant" : ProjNumValue = "SAE-SC04-01"
+'	Case "Side Thwomp" : ProjNumValue = "SAE-SC03-04"
+'	Case "Bounce Pad w/Props" : ProjNumValue = "SAE-SC08-04"
+'	Case Else 
+'		MessageBox.Show("Element Name is not valid.  ", "Universal Config")
+'		err = True
+'End Select
 
-iProperties.Value("Custom", "Project Number") = ProjNumValue
+'iProperties.Value("Custom", "Project Number") = ProjNumValue
+iProperties.Value("Custom", "Show") = Parameter("Show")
+iProperties.Value("Custom", "Element") = Parameter("Element")
+iProperties.Value("Custom", "Kit") = Parameter("Kit")
+iProperties.Value("Custom", "Show Desc") = Parameter("Show_Desc")
+iProperties.Value("Custom", "Element Desc") = Parameter("Element_Desc")
+iProperties.Value("Custom", "Kit Desc") = Parameter("Kit_Desc")
+iProperties.Value("Custom", "Phase") = Parameter("DPhase")
+iProperties.Value("Custom", "DesignLevel") = Parameter("DesignLevel")
+
+iProperties.Value("Custom", "Kit Num") = Left((iProperties.Value("Custom", "Kit")),2)
+iProperties.Value("Custom", "Element Num") = Left((iProperties.Value("Custom", "Element")), 2)
+iProperties.Value("Custom", "JobNum")= iProperties.Value("Custom", "Show Num")&"-"&iProperties.Value("Custom", "Element Num")&"-"&iProperties.Value("Custom", "Kit Num")
+
+iProperties.Value("Project", "Designer") = Left((Parameter("DES_BY")), 2)
+
+iProperties.Value("Custom", "REV 1 BY")= Left ((Parameter("REV_1_BY")), 2)
+iProperties.Value("Custom", "REV 1 APPROVED BY") = Left ((Parameter("REV_1_APR")), 2)
+
+iProperties.Value("Custom", "REV 2 BY")= Left ((Parameter("REV_2_BY")), 2)
+iProperties.Value("Custom", "REV 2 APPROVED BY") = Left((Parameter("REV_2_APR")), 2)
+
+iProperties.Value("Custom", "REV 3 BY")= Left ((Parameter("REV_3_BY")), 2)
+iProperties.Value("Custom", "REV 3 APPROVED BY") = Left((Parameter("REV_3_APR")), 2)
+
+iProperties.Value("Custom", "REV 4 BY")= Left ((Parameter("REV_4_BY")), 2)
+iProperties.Value("Custom", "REV 4 APPROVED BY") = Left ((Parameter("REV_4_APR")), 2)
+
+iProperties.Value("Custom", "REV 5 BY")= Left ((Parameter("REV_5_BY")), 2)
+iProperties.Value("Custom", "REV 5 APPROVED BY") = Left((Parameter("REV_5_APR")), 2)
+
+iProperties.Value("Custom", "REV 6 BY")= Left ((Parameter("REV_6_BY")), 2)
+iProperties.Value("Custom", "REV 6 APPROVED BY") = Left((Parameter("REV_6_APR")), 2)
+
+
+iLogicVb.RunExternalRule("Universal Blank Dash")
+
 
 If err = False Then
 	MessageBox.Show("Configuration Sucessful", "Universal Config")

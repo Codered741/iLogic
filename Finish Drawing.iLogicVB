@@ -40,10 +40,15 @@ Sub Main()
 	
 	invDesignInfo = oRefDoc.PropertySets.Item("Design Tracking Properties")
 	oRefCustomProps = oRefDoc.PropertySets.Item("Inventor User Defined Properties")
+	'oRefSumProps = oRefDoc.PropertySets.Item("Design Tracking Properties")
+	
+	'DateProp = invDesignInfo.Item("Creation Time")
+	'CheckedDateProp = invDesignInfo.Item("Date Checked")
+	'ApprovedDate = invDesignInfo.Item("Engr Date Approved")
 
-	DateProp = invDesignInfo.Item("Creation Time")
-
-	DateProp.Value = DateString
+	'DateProp.Value = DateString
+	'CheckedDateProp.Value = DateString
+	'ApprovedDate.Value = DateString
 
 	oCommandMgr.ControlDefinitions.Item("UpdateCopiedModeliPropertiesCmd").Execute2(True)
 	oCommandMgr.ControlDefinitions.Item("AppZoomAllCmd").Execute
@@ -58,7 +63,8 @@ Sub Main()
 		' notDone = True
 	' End Try
 	'iLogicVb.RunExternalRule("Export and Attach PDF")
-
+	
+	oDoc.Update
 	oDoc.Sheets.Item(1).Activate
 	oDoc.Save
 	

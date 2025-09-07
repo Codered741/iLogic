@@ -14,20 +14,20 @@
 		If oAsmDoc.DocumentType = kAssemblyDocumentObject Or oAsmDoc.DocumentType = kPartDocumentObject Then
 		
 			'Check for property "STL" and create it if not found.  
-			Try
-				  prop = customPropertySet.Item("STL")
-			Catch
-				  ' Assume error means not found
-				  customPropertySet.Add("", "STL")
-				  iProperties.Value("Custom", "STL") = False
-			End Try
+'			Try
+'				  prop = customPropertySet.Item("STL")
+'			Catch
+'				  ' Assume error means not found
+'				  customPropertySet.Add("", "STL")
+'				  iProperties.Value("Custom", "STL") = False
+'			End Try
 
-			'Check iproperty to see if rule has been run, warn user if it has.  
-			If iProperties.Value("Custom", "STL") = True Then
-				MessageBox.Show("File has already been created.  The file must be checked out to continue.  Are you sure you want to continue?", "Existing File!",MessageBoxButtons.OKCancel)
-			End If
+'			'Check iproperty to see if rule has been run, warn user if it has.  
+'			If iProperties.Value("Custom", "STL") = True Then
+'				MessageBox.Show("File has already been created.  The file must be checked out to continue.  Are you sure you want to continue?", "Existing File!",MessageBoxButtons.OKCancel)
+'			End If
 			
-			oPath = ThisDoc.Path
+			Dim oPath As String = ThisDoc.Path
 			oFileName = ThisDoc.FileName(False) 'without extension
 			oRevNum = iProperties.Value("Project", "Revision Number")
 			oSTLAddIn = ThisApplication.ApplicationAddIns.ItemById _
@@ -57,7 +57,7 @@
 					'ONE FILE PER PART INSTANCE = 1 
 			End If
 			
-			oDataMedium.FileName = oPath & "\" & oFileName & ".stl"
+			oDataMedium.FileName = oPath & "\"  & oFileName & "_REV_" & oRevNum & "_" & Now.ToString("yyyyMMddhhmm") & ".stl"
 
 			'Publish document
 			oSTLAddIn.SaveCopyAs(oDocument, oContext, oOptions, oDataMedium)
@@ -70,7 +70,7 @@
 			'ThisDoc.Document.SaveAs(FileNameSTL, True)
 			
 			
-			If iProperties.Value("Custom", "STL") = False Then
+			'If iProperties.Value("Custom", "STL") = False Then
 			
 				AttachFile = MessageBox.Show("Would you like to create this file as an attachment?", "Create Attachment?",MessageBoxButtons.YesNo,MessageBoxIcon.Question)
 		
@@ -84,12 +84,12 @@
 					
 					Dim oRefOLE As ReferencedOLEFileDescriptors
 					oRefOLE = oDoc.ReferencedOLEFileDescriptors 
-					oRefOLE.Add(oPath & "\" & oFileName & ".stl", kOLEDocumentLinkObject)
+					oRefOLE.Add(oPath & "\" & oFileName & "_REV_" & oRevNum & "_" & Now.ToString("yyyyMMddhhmm") & ".stl", kOLEDocumentLinkObject)
 					iProperties.Value("Custom", "STL") = True
 
 				End If
 			
-			End If
+			'End If
 			
 		Else
 		

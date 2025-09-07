@@ -9,7 +9,7 @@
 Sub Main()
 
 	SharedVariable("LogVar") = "Missing Drawings"
-	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")
 	
 	MissingDrawings()
 	
@@ -28,20 +28,15 @@ Sub MissingDrawings()
 	Dim oAsmDoc As AssemblyDocument 'define the active document as an assembly file
 	oAsmDoc = ThisApplication.ActiveDocument
 	
-	Dim oRefDocs As New List(Of String)'DocumentsEnumerator = oAsmDoc.AllReferencedDocuments 'look at the files referenced by the assembly
-	Dim oRefDocName As String
+	Dim oRefDocs As DocumentsEnumerator = oAsmDoc.AllReferencedDocuments 'look at the files referenced by the assembly
 	Dim oRefDoc As Document
-	
-	'get list of part numbers from Structured BOM
-	GetDocsFromBOM(oAsmDoc, oRefDocs)
 	
 	Dim oFile As String
 	oFile = ThisDoc.PathAndFileName(False) & ".txt"
 	Dim oAppend As System.IO.StreamWriter
 	oAppend = IO.File.AppendText(oFile)
 	
-	Dim bFoundFile As Boolean
-	bFoundFile = False
+	Dim bFoundFile As Boolean = False
 
 	
 	Dim PrtsMissingDwgs As New List(Of String)
@@ -61,11 +56,20 @@ Sub MissingDrawings()
 
 	oAppend.WriteLine ("Report created - " & DateString & ":" & TimeString)  '& " by " & ThisApplication.UserName)
 	'oAppend.Flush()
+	
+	dwgPathName = FindDrawingFile(oAsmDoc)
+	
+	If dwgPathName = "" Then 
+		PrtsMissingDwgs.Add(oAsmDoc.FullDocumentName)
+		bFoundFile = True
 		
+	Else
+		'oAppend.WriteLine("FOUND : " & dwgPathName & " FOR : " & oRefDoc.FullDocumentName)
+	End If
+				
 	'work the the drawing files for the referenced models
 	'this expects that the model has a drawing of the same name
-	For Each oRefDocName In oRefDocs
-		oRefDoc = ThisApplication.Documents.ItemByName(oRefDocName)
+	For Each oRefDoc In oRefDocs
 		If oRefDoc.DocumentType = kPartDocumentObject OrElse oRefDoc.DocumentType = kAssemblyDocumentObject Then
 			' Dim props as PropertySet
 			props = oRefDoc.PropertySets.Item("Inventor User Defined Properties")
@@ -78,15 +82,10 @@ Sub MissingDrawings()
 				dwgPathName = FindDrawingFile(oRefDoc)
 				
 				If dwgPathName = "" Then 
-					
-					
 					PrtsMissingDwgs.Add(oRefDoc.FullDocumentName)
 					bFoundFile = True
-					
 				Else 
-					
 					'oAppend.WriteLine("FOUND : " & dwgPathName & " FOR : " & oRefDoc.FullDocumentName)
-					
 				End If
 			End If
 			Catch
@@ -94,12 +93,7 @@ Sub MissingDrawings()
 				'oAppend.WriteLine("MAKE-BUY PROPERTY NOT FOUND : " & oRefDoc.FullDocumentName)
 				PrtsMissingMB.Add(oRefDoc.FullDocumentName)
 				bFoundFile = True
-				
 			End Try
-			
-			'MsgBox(MBProp.Value)
-			
-			
 		End If
 	Next
 	
@@ -165,7 +159,7 @@ Function FindDrawingFile(PartOrAssemblyDoc As Document)
    
     ' Extract the path from the full filename.
     Dim path As String
-    path = Left$(fullFilename, InStrRev(fullFilename, "\"))
+    path = ThisApplication.DesignProjectManager.ActiveDesignProject.WorkspacePath
    
     ' Extract the filename from the full filename.
     Dim filename As String
@@ -197,32 +191,3 @@ Function FindDrawingFile(PartOrAssemblyDoc As Document)
         FindDrawingFile = drawingFilename
     End If
 End Function
-
-
-Sub GetDocsFromBOM(oDoc as Document, ByRef BOMDocs as List(of String))
-	
-	If oDoc.DocumentType <> kAssemblyDocumentObject Then
-		MsgBox("This rule can only be run from an assembly")
-		Exit Sub
-	End If
-	
-	Dim oDocBOM As BOM = oDoc.ComponentDefinition.BOM
-
-	oDocBOM.StructuredViewEnabled = True
-	oDocBOM.StructuredViewFirstLevelOnly = False
-	oDocBOM.PartsOnlyViewEnabled = False
-	
-	Dim oBOMView as BOMView = oDocBOM.BOMViews.Item("Structured")	
-	Dim oBOMRows As BOMRowsEnumerator = oBOMView.BOMRows
-	Dim oCompDef As ComponentDefinition
-	Dim oPNProp as Inventor.Property
-	
-	For Each oRow as BOMRow in oBOMRows
-		
-			GetBOMRowDocFile(oRow, BOMDocs)
-		
-	Next 
-	
-	'BOMDocs.Sort()
-	
-End Sub

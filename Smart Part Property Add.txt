@@ -125,7 +125,7 @@ End Sub
 '''''''''''''''''''''''''Subroutines
 Public Sub OPSMVParamAdd(Params As List(Of String), GroupName As String)
 	
-	Dim OPList(0 To 37) As String 
+	Dim OPList(0 To 43) As String 
 	
 	OPList(0)=""" """
 	OPList(1)="""OP009:Lathe CNC~"""
@@ -158,13 +158,20 @@ Public Sub OPSMVParamAdd(Params As List(Of String), GroupName As String)
 	OPList(28)="""OP087: OS - Sandblast~"""
 	OPList(29)="""OP089:OS - Electrical~"""
 	OPList(30)="""OP110:OS - Routing~"""
-	OPList(31)="""OP139:3D – Printing~"""
-	OPList(32)="""OP141:OS - Upholstery~"""
-	OPList(33)="""OP145:Post Processing~"""
-	OPList(34)="""OP146:Laser Cutting / Etching~"""
-	OPList(35)="""OP186:OS - Spray Paint~"""
-	OPList(36)="""OP189:OS - Heat Treat & Destruction~"""
-	OPList(37)="""OP191:OS - Passivate~"""
+	OPList(31)="""OP128:LED Fab~"""
+	OPList(32)="""OP139:3D – Printing~"""
+	OPList(33)="""OP141:OS - Upholstery~"""
+	OPList(34)="""OP145:Post Processing~"""
+	OPList(35)="""OP146:Laser Cutting / Etching~"""
+	OPList(36)="""OP186:OS - Spray Paint~"""
+	OPList(37)="""OP189:OS - Heat Treat & Destruction~"""
+	OPList(38)="""OP191:OS - Passivate~"""
+	OPList(39)="""OP223:OS - Screenprinting~"""
+	OPList(40)="""OP750:FAB-Quality Control~"""
+	OPList(41)="""OP760:FAB-Weld Inspection~"""
+	OPList(42)="""OP800:MSP-Waterjet~"""
+	OPList(43)="""OP801:MSP-Folding~"""
+	
 	
 	
 	Dim OPx As Parameter

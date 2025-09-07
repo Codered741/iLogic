@@ -19,7 +19,7 @@ Sub Main()
 	Dim oAsmDef As AssemblyComponentDefinition = oAsmDoc.ComponentDefinition
 	Dim dViewRepMgr As RepresentationsManager = oAsmDef.RepresentationsManager
 	Dim dViewReps As DesignViewRepresentations = dViewRepMgr.DesignViewRepresentations
-	Dim dMasterViewRep As DesignViewRepresentation = dViewReps.Item(1) 'assume that the first view rep is the master
+	Dim dMasterViewRep As DesignViewRepresentation = dViewReps.Item("Default")
 	Dim vRepName As String = "Pretty Colors" 'name for the new view rep
 	Dim dPCViewRep As DesignViewRepresentation 
 	Dim oOccs as ComponentOccurrencesEnumerator
@@ -67,7 +67,7 @@ Sub Main()
 		
 	For Each BOMDoc in BOMDocs
 		refDoc = ThisApplication.Documents.ItemByName(BOMDoc)
-		If refDoc.DocumentType = kPartDocumentObject Then
+		'If refDoc.DocumentType = kPartDocumentObject Then
 			oOccs = oAsmDef.Occurrences.AllReferencedOccurrences(refDoc)
 		
 			BreakLoop = 0 ' reset for each components
@@ -83,7 +83,7 @@ Sub Main()
 				BreakLoop += 1
 				
 				If BreakLoop > ColorsCount Then
-					MessageBox.Show("An error occurred, please try again", "iLogic Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+					MessageBox.Show("An error occurred, please check to see that the RAL colors Library is installed. ", "iLogic Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
 					Exit Sub
 				End If
 				
@@ -97,7 +97,7 @@ Sub Main()
 			
 			UsedColors.Add(pColor)
 			
-		End If
+		'End If
 	Next
 	
 End Sub 'Main
@@ -120,10 +120,13 @@ Sub GetDocsFromBOM(oDoc as Document, ByRef BOMDocs as List(of String))
 	Dim oCompDef As ComponentDefinition
 	Dim oPNProp as Inventor.Property
 	
+	
 	For Each oRow as BOMRow in oBOMRows
 		
+		oCompDef = oRow.ComponentDefinitions.Item(1)
+		
 		'GetBOMRowDocFile(oRow, BOMDocs)
-			
+		
 		If oCompDef.Type = 100675072 Then 'exclude Virtual Components
 		
 			'do nothing

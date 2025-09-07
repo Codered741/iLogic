@@ -14,7 +14,7 @@ Sub Main()
 	
 	If i <> vbOK Then Return
 		iProperties.Value("Custom", "MATERIAL NUMBER") = dlg.MaterialNum
-		iProperties.Value("Custom", "MATERIAL DESCRIPTION") = dlg.MaterialDesc
+		iProperties.Value("Custom", "MATERIAL DESCRIPTION") = dlg.MaterialDesc.ToUpper
 		
 		
 	End Using
