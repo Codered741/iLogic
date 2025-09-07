@@ -1,0 +1,99 @@
+﻿Sub Main ()
+    ' a reference to the drawing document.
+    ' This assumes a drawing document is active.
+    Dim oDrawDoc As DrawingDocument
+		oDrawDoc = ThisApplication.ActiveDocument
+		Dim oSheet As Sheet
+		'iLogicVb.RunRule("Remove sheet title")
+
+		'oSheet = oDrawDoc.ActiveSheet
+	'For Each oSheet In oDrawDoc.Sheets
+		DeleteTitle(oSheet)
+	
+		AddTitle(oSheet)
+	'Next
+	
+	oDrawDoc.Update
+	
+End Sub
+	
+Sub DeleteTitle(oSheet)	
+	
+	    ' a reference to the drawing document.
+    ' This assumes a drawing document is active.
+    Dim oDrawDoc As DrawingDocument
+		oDrawDoc = ThisApplication.ActiveDocument
+		
+	'Dim oSheet As Sheet
+	oSheet = oDrawDoc.ActiveSheet
+
+
+
+
+
+    Dim oSketch As DrawingSketch
+	
+	Try
+		
+		For Each oSheet In oDrawDoc.Sheets
+			For Each oSketch In oDrawDoc.ActiveSheet.Sketches
+	
+		
+		If oSketch.Name = "SHEET TITLE"
+		oSketch.Delete()
+		End If
+		Next
+		Next
+	Catch
+		'MessageBox.Show("Sketch not found")
+	End Try
+End Sub
+
+	
+Sub AddTitle(oSheet)
+	
+	Dim oDrawDoc As DrawingDocument
+		oDrawDoc = ThisApplication.ActiveDocument
+	
+	'Dim oSheet As Sheet
+'Dim oSheets As Sheet
+	'oSheets = oDrawDoc.Sheets.Item(SheetCount)	
+	
+'For Each oSheet In oDrawDoc.Sheets
+			'For Each oSketch In oDrawDoc.ActiveSheet.Sketches
+    
+'    ' Create a new sketch on the active sheet.
+	oSheet = oDrawDoc.ActiveSheet
+	'Dim oSketches As oSheet.Sketches
+	Dim oSketch As DrawingSketch
+	
+		
+		oSketch = oDrawDoc.ActiveSheet.Sketches.Add
+    	oSketch.Name = "SHEET TITLE"
+    ' Open the sketch for edit so the text boxes can be created.
+    ' This is only required for drawing sketches, not part.
+    oSketch.Edit
+    
+    Dim oTG As TransientGeometry
+    	oTG = ThisApplication.TransientGeometry
+  
+    ' Create text with simple string as input.  Since this doesn't use
+    ' any text overrides, it will default to the active text style.
+    Dim sText As String
+    sText = Split(oSheet.Name,":")(0)
+    Dim oTextBox As TextBox
+	'Set font size in inches. 2d point coordinates in centimeters.
+	oFontSize = .625
+    	oTextBox = oSketch.TextBoxes.AddFitted(oTG.CreatePoint2d(1.5, 26.5), "<StyleOverride FontSize = '" & oFontSize & "'>" & sText & "</StyleOverride>")
+    
+    ' Create text using various overrides.
+   ' sText = "Notice: All holes larger than 0.500 n are to be lubricated."
+    'oTextBox = oSketch.TextBoxes.AddFitted(oTG.CreatePoint2d(3, 16), sText)
+	
+	
+	oSketch.ExitEdit
+	'Next
+
+End Sub
+
+

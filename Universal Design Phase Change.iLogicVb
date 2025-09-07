@@ -1,0 +1,84 @@
+﻿
+Sub Main
+	Logger.Trace("")
+
+Dim oAsmCompDef As AssemblyComponentDefinition
+oAsmCompDef = ThisApplication.ActiveDocument.ComponentDefinition
+Dim oOccurrence As ComponentOccurrence
+
+'Create List Box with "DPhase" parameter values, selection = nPhase
+nPhase = InputListBox("Select Design Phase", MultiValue.List("DPhase"), _
+nPhase, Title := "New Phase", ListName := "")
+
+'Create shared variable for subroutine
+SharedVariable("nPhase") = nPhase
+
+'Set new values in kit
+iProperties.Value("Custom", "Phase") = nPhase
+Parameter("DPhase") = nPhase
+
+'Call sub Cycle to iterate through assembly
+ Call Cycle(oAsmCompDef.Occurrences, 1)
+
+InventorVb.DocumentUpdate
+MessageBox.Show("Success", "WOOooOO", MessageBoxButtons.OK, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button1)
+End Sub
+
+Sub Cycle(Occurrences As ComponentOccurrences, Level As Integer)
+
+Dim oAsmCompDef As AssemblyComponentDefinition
+oAsmCompDef = ThisApplication.ActiveDocument.ComponentDefinition
+Dim oOccurrence As ComponentOccurrence
+	'Set values in each component
+	For Each oOccurrence In Occurrences
+		Try
+			Parameter(oOccurrence.Name, "DPhase") = SharedVariable("nPhase")
+			iProperties.Expression(oOccurrence.Name, "Custom", "Phase") = SharedVariable("nPhase")
+			Logger.Trace("Updating the part. - " & oOccurrence.Name )
+
+		Catch
+		End Try
+	'Check subassemblies and update parts inside
+	If oOccurrence.DefinitionDocumentType = kAssemblyDocumentObject Then
+Call Cycle(oOccurrence.SubOccurrences, Level + 1)	
+End If	
+	Next
+
+'Else
+'	MessageBox.Show("Failed to set value. Rule will abort", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1)
+'	Return
+'End If
+End Sub 'Cycle
+
+
+'Sub Main()
+'Dim oAsmDoc As AssemblyDocument 
+'oAsmDoc = ThisApplication.ActiveDocument  
+'Call Iterate(oAsmDoc.ComponentDefinition.Occurrences, 1)
+'End Sub 
+
+'Private Sub Iterate(Occurrences As ComponentOccurrences, Level As Integer) 
+''Iterate through Assembly
+
+'Dim oOcc As ComponentOccurrence 
+'For Each oOcc In Occurrences 
+
+''Find Parts in Assembly
+'Dim CadlinePart As String
+'CadlinePart = oOcc.Name
+'Try 
+
+''Write iProps to Parts
+'iProperties.Value(CadlinePart, "Summary", "Comments") = "Hello World"
+
+
+'Catch
+''MsgBox("Message!")            
+'End Try
+        
+''Run through the sub assemblies 
+'If oOcc.DefinitionDocumentType = kAssemblyDocumentObject Then
+'Call Iterate(oOcc.SubOccurrences, Level + 1) 
+'End If 
+'Next 
+'End Sub

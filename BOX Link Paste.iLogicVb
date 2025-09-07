@@ -1,0 +1,44 @@
+﻿Sub Main()
+
+	Dim oDoc As Document = ThisApplication.ActiveDocument
+	Dim compOcc As ComponentOccurrence
+		
+	SharedVariable("LogVar") = "BOX Link Paste"
+	iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")
+	
+		If oDoc.FileSaveCounter >= 1 Then
+		' Are we in a Drawing Document?
+			If oDoc.DocumentType = kDrawingDocumentObject Then
+						
+						
+				'get referenced documents of the drawing
+				Dim oRefDocs As DocumentsEnumerator = oDoc.AllReferencedDocuments
+				Dim oRefDoc As Document = oRefDocs.Item(1)
+				Dim lPDF As New List(Of String)
+				Dim oRefOLE As ReferencedOLEFileDescriptors = oDoc.ReferencedOLEFileDescriptors 
+			
+				'access properties of first referenced file
+				oRefCPropSet = oRefDoc.PropertySets.Item("Inventor User Defined Properties")
+				oCPropSet = oDoc.PropertySets.Item("Inventor User Defined Properties")
+			
+				Try
+				oCPropSet.Add("", "BOXLink")
+				Catch
+				End Try	
+				
+			Dim BL As String = InputBox("Paste BOX Link to kit PDF", "BOX Link", "")
+			iProperties.Value("Custom", "BOXLink")=BL
+			
+		Else
+		
+			MessageBox.Show("This command can only be used in a Drawing.")
+		
+		End If
+	Else
+	
+		MessageBox.Show("File must be saved to continue.", "File Not Saved",MessageBoxButtons.OK,MessageBoxIcon.Error)
+
+	End If
+End Sub			
+
+	

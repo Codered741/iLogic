@@ -1,0 +1,58 @@
+﻿Sub Main()
+	
+Dim oDoc As Document = ThisApplication.ActiveDocument
+oBOMStruct = oDoc.ComponentDefinition.BOMStructure
+Dim oStrucText As String
+Select Case oBOMStruct
+
+	Case 51970
+		oStrucText = "Normal"
+	Case 51974
+		oStrucText = "Inseparable"
+	Case 51973
+		oStrucText = "Purchased"
+	Case 51971
+		oStrucText = "Phantom"
+	Case 51972
+		oStrucText = "Reference"
+
+End Select
+
+
+'MessageBox.Show(oStrucText, "Title")
+
+
+Dim MyArrayList As New ArrayList
+MyArrayList.Add("Normal")
+MyArrayList.Add("Inseparable")
+MyArrayList.Add("Purchased")
+MyArrayList.Add("Phantom")
+MyArrayList.Add("Reference")
+Question = InputListBox("Choose new structure from list", MyArrayList, oStrucText,"Check/ Change BOM Structure", "Current: " & oStrucText & "                                                               ")
+
+'kDefaultBOMStructure 51969 The default structure type.
+'kInseparableBOMStructure 51974 The inseparable structure type.
+'kNormalBOMStructure 51970 The normal structure type.
+'kPhantomBOMStructure 51971 The phantom structure type.
+'kPurchasedBOMStructure 51973 The purchased structure type.
+'kReferenceBOMStructure 51972 The reference structure type.
+'kVariesBOMStructure 51975 The structure type varies amongst references.
+
+
+Select Case Question
+
+	Case "Normal"
+		ThisDoc.Document.ComponentDefinition.BOMStructure = 51970
+	Case "Inseparable"
+		ThisDoc.Document.ComponentDefinition.BOMStructure = 51974
+	Case "Purchased"
+		ThisDoc.Document.ComponentDefinition.BOMStructure = 51973
+	Case "Phantom"
+		ThisDoc.Document.ComponentDefinition.BOMStructure = 51971
+	Case "Reference"
+		ThisDoc.Document.ComponentDefinition.BOMStructure = 51972
+
+
+End Select
+	
+End Sub

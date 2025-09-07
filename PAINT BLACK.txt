@@ -1,0 +1,2 @@
+iProperties.PartColor = "TAIT BLACK"
+MsgBox("Changed Finish")

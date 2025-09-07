@@ -1,0 +1,2 @@
+iProperties.Material = "UHMW, BLACK"
+MsgBox("Changed Material")

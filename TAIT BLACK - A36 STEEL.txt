@@ -1,0 +1,3 @@
+iProperties.Material = "STEEL, MILD"
+iProperties.PartColor = "TAIT BLACK"
+MsgBox("Changed Material")

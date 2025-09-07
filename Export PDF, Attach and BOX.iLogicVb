@@ -1,0 +1,318 @@
+﻿Sub Main()
+'declarations
+	Dim oDoc As Document = ThisApplication.ActiveDocument
+	Dim compOcc As ComponentOccurrence
+	'customPropertySet = ThisDoc.Document.PropertySets.Item("Inventor User Defined Properties")
+
+'Main
+	
+	SharedVariable("LogVar") = "Export Attach Box PDF"
+	iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")
+	
+	If oDoc.FileSaveCounter >= 1 Then
+		' Are we in a Drawing Document?
+		If oDoc.DocumentType = kDrawingDocumentObject Then
+		
+								
+			
+			
+			'get referenced documents of the drawing
+			Dim oRefDocs As DocumentsEnumerator = oDoc.AllReferencedDocuments
+			Dim oRefDoc As Document = oRefDocs.Item(1)
+			Dim lPDF As New List(Of String)
+			Dim oRefOLE As ReferencedOLEFileDescriptors = oDoc.ReferencedOLEFileDescriptors 
+			
+			'access properties of first referenced file
+			oRefCPropSet = oRefDoc.PropertySets.Item("Inventor User Defined Properties")
+			oCPropSet = oDoc.PropertySets.Item("Inventor User Defined Properties")
+			
+			Try
+			oCPropSet.Add("", "ExportPath")
+			Catch
+			End Try
+			Try
+			oCPropSet.Add("", "BOXLink")
+			Catch
+			End Try				
+			
+			'Check for property "PDF" on model and create it if not found.  
+			Try 
+				prop = oRefCPropSet.Item("PDF")
+			Catch
+				' Assume error means not found
+				oRefCPropSet.Add(False, "PDF")
+			End Try
+			
+			'Check for property "PDF" on drawing and create it if not found
+			Try
+				prop = oCPropSet.Item("PDF")
+			Catch
+				oCPropSet.Add(False, "PDF")
+			End Try
+		
+			Dim dPDF = oCPropSet.Item("PDF")
+			Dim mPDF = oRefCPropSet.Item("PDF")
+
+			If VarType(dPDF.Value) <> vbBoolean Then
+				dPDF.Delete
+				oCPropSet.Add(False, "PDF")
+				dPDF = oCPropSet.Item("PDF")
+			End If
+
+			If VarType(mPDF.Value) <> vbBoolean Then
+				mPDF.Delete
+				oRefCPropSet.Add(False, "PDF")
+				mPDF = oRefCPropSet.Item("PDF")
+			End If
+			
+			'==============================================
+		'Attempt to add the ExportPath property and check if previous path exists. 
+		'Prompt to use existing path
+		'Otherwise call the BrowseForFolder function to choose destination folder
+			'Dim SharedVariable("PathSelected") As String
+		
+		If iProperties.Value("Custom", "BOXLink") <> "" Then	
+			MessageBox.Show("BOX Link detected." & vbLf & "PDF will be created at same folder path as the drawing." & vbLf & "The path will be displayed when the operation is complete."  , "Box Link Detected",MessageBoxButtons.OK,MessageBoxIcon.Information)
+		
+		Else If 	iProperties.Value("Custom", "ExportPath") <> "" Then
+			QP=MessageBox.Show("Use previous export path?" & vbLf & iProperties.Value("Custom", "ExportPath"),"Export Path",MessageBoxButtons.YesNoCancel,MessageBoxIcon.Question)
+				If QP = vbYes Then
+					SharedVariable("PathSelected")=iProperties.Value("Custom", "ExportPath")
+				Else If QP = vbNo Then
+					SharedVariable("PathSelected") = BrowseForFolder
+				Else If QP = vbCancel Then
+					Exit Sub
+				End If	
+		Else 
+			SharedVariable("PathSelected") = BrowseForFolder
+		End If
+		
+			
+		'PathSelected=BrowseForFolder
+		'************************************	
+			
+			
+			
+			'Check iproperty to see if rule has been run, warn user if it has.  
+			If mPDF.Value = True OrElse dPDF.Value = True Then
+			'check to ensure that DXF OLE's are actually attached.  
+				For Each oRef In oRefOLE
+					If oRef.OLEDocumentType = 3331 AndAlso oRef.FullFileName.Contains(".pdf") Then
+						lPDF.Add(oRef.FullFileName)
+					End If
+				Next	
+			
+				If lPDF.Count > 0 Then
+					'warn if file has already been created, and proceed according to user input					
+					usrContinue = MessageBox.Show("A PDF attachment has already been created.  The PDF attachment must be checked out to continue.  Are you sure you want to continue?", "Existing File!",MessageBoxButtons.OKCancel)
+					If usrContinue = vbCancel Then
+						Exit Sub
+					End If
+					mPDF.Value = True
+				Else
+					'try to fix the problem
+					copiedFile = MessageBox.Show("It appears that either the drawing or part has been copied.  Is this True? ", "Copied file?", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+					If copiedFile = vbYes Then
+						dPDF.Value = False
+						mPDF.Value = False
+						MessageBox.Show("Please re-run the rule.  ", "Reset complete", MessageBoxButtons.OK)
+						Exit Sub
+					Else
+						MessageBox.Show("There is something wrong.  Please contact a Vault Administrator for assistance.  ", "GET HELP!!!", MessageBoxButtons.OK, MessageBoxIcon.Error)
+						ThisDoc.Launch("C:\_vaultWIP\Designs\Templates\Library\iLogic\Special\spiderdick.jpg")
+						SharedVariable("LogVar") = "SPIDERDICK"
+						iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")
+						Exit Sub
+					End If
+				End If
+			End If
+
+			'http://inventortrenches.blogspot.com/2011/07/ilogic-To-save-pdf-files-To-New.html
+
+		
+
+
+			'Gather data for file naming and export
+			oPath = ThisDoc.Path
+			oFileName = ThisDoc.FileName(False) 'without extension
+			oRevNum = iProperties.Value("Project", "Revision Number")
+			oDesc = iProperties.Value("Project", "Description")
+			oPrj = iProperties.Value("Project", "Project")
+			oPDFAddIn = ThisApplication.ApplicationAddIns.ItemById _
+			("{0AC6FD95-2F4D-42CE-8BE0-8AEA580399E4}")
+			oDocument = ThisApplication.ActiveDocument
+			oContextA = ThisApplication.TransientObjects.CreateTranslationContext
+			oContextA.Type = IOMechanismEnum.kFileBrowseIOMechanism
+			oContextE = ThisApplication.TransientObjects.CreateTranslationContext
+			oContextE.Type = IOMechanismEnum.kFileBrowseIOMechanism
+			oOptionsA = ThisApplication.TransientObjects.CreateNameValueMap
+			oOptionsE = ThisApplication.TransientObjects.CreateNameValueMap
+			oDataMediumAttach = ThisApplication.TransientObjects.CreateDataMedium
+			oDataMediumExport = ThisApplication.TransientObjects.CreateDataMedium
+			
+			'Set options for the attachment (always "All colors as Black")
+			If oPDFAddIn.HasSaveCopyAsOptions(oDataMediumAttach, oContextA, oOptionsA) Then
+			oOptionsA.Value("All_Color_AS_Black") = 1
+			oOptionsA.Value("Remove_Line_Weights") = 1
+			oOptionsA.Value("Vector_Resolution") = 400
+			oOptionsA.Value("Sheet_Range") = Inventor.PrintRangeEnum.kPrintAllSheets
+			End If
+			
+			
+			
+			
+
+			oDataMediumAttach.FileName = oPath & "\" & oFileName & ".pdf"
+			
+			If 	iProperties.Value("Custom", "BOXLink") <> "" Then
+			oDataMediumExport.FileName = oPath & "\" & oFileName & " - " & oPrj & " - " & oDesc & " -REV" & oRevNum & " " & Now.ToString("yyyyMMdd") & ".pdf"
+	
+		
+			Else
+			
+			oDataMediumExport.FileName = SharedVariable("PathSelected") & "\" & oFileName & " - " & oPrj & " - " & oDesc & " - rev" & oRevNum & " " & Now.ToString("yyyyMMdd") & ".pdf"
+			End If
+			
+			'Publish document
+			
+			
+			Try
+				oPDFAddIn.SaveCopyAs(oDocument, oContextA, oOptionsA, oDataMediumAttach)
+			Catch
+				MessageBox.Show("WHAT DID I JUST SAY!!!!  You do not have permission to write to this PDF, likely because you DIDNT CHECK IT OUT!!!!  ", "Permission Denied", MessageBoxButtons.OK, MessageBoxIcon.Error)
+				Exit Sub
+			End Try
+			
+			If mPDF.Value = False Then
+			
+				AttachFile = MessageBox.Show("Would you like to create this file as an attachment?", "Create Attachment?",MessageBoxButtons.YesNo,MessageBoxIcon.Question)
+			
+				If AttachFile = vbYes Then
+				
+					'attach PDF as OLE object, if it hasnt been already.  
+					
+					'Dim oDoc As DrawingDocument
+						'oDoc = ThisApplication.ActiveDocument
+							
+						Dim kOLEDocumentLinkObject As ObjectTypeEnum
+							kOLEDocumentLinkObject = 3331 'OLE link document
+							
+						oRefOLE.Add(oPath & "\" & oFileName & ".pdf", kOLEDocumentLinkObject)
+						mPDF.Value = True
+					
+					End If
+				
+			End If
+		'Export in BW/Color option for BOX export
+			
+'			Dim BW As Boolean
+'		Dim BWv As Integer
+'        BW = InputRadioBox("Choose BOX export color option", "Export all colors as Black", "Export full color", booleanParam, Title := "Export Option")
+'		If BW = True Then
+'			BWv = 1
+'			Else
+'			BWv = 0
+'		End If
+'		'Message box for testing the radio buttons. 
+'         'MessageBox.Show("B&W value " & BW & vbLf & "BWv value" & BWv, "Reset complete", MessageBoxButtons.OK)
+
+			
+		
+		'Set options for the export file (All colors as black or Full color)
+			If oPDFAddIn.HasSaveCopyAsOptions(oDataMediumExport, oContextE, oOptionsE) Then
+			oOptionsE.Value("All_Color_AS_Black") = BWv
+			oOptionsE.Value("Remove_Line_Weights") = 1
+			oOptionsE.Value("Vector_Resolution") = 400
+			oOptionsE.Value("Sheet_Range") = Inventor.PrintRangeEnum.kPrintAllSheets
+			End If
+		
+		
+			Try
+			'Create the export at set file location	
+			oPDFAddIn.SaveCopyAs(oDocument, oContextE, oOptionsE, oDataMediumExport)
+			
+			If 	iProperties.Value("Custom", "BOXLink") = "" Then	
+				MessageBox.Show(oDataMediumExport.FileName, "File Created ", MessageBoxButtons.OK)
+				System.Diagnostics.Process.Start(iProperties.Value("Custom", "ExportPath"))
+				
+			Else If 	iProperties.Value("Custom", "BOXLink") <> "" Then	
+			MessageBox.Show(oDataMediumExport.FileName & vbLf & vbLf & "The BOX link will now open in a web browser to upload a new verion of the PDF.", "File Created! ", MessageBoxButtons.OK)
+					Try
+				System.Diagnostics.Process.Start(iProperties.Value("Custom", "BOXLink"))
+			Catch
+  				MessageBox.Show("Could Not Open Page", "iLogic")
+			End Try
+		End If
+		Catch
+			MessageBox.Show("You do not have permission to write to the BOX PDF.  Please check the PDF and try again." & oDataMediumExport.FileName, "Write Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Error)
+			Exit Sub
+		End Try
+			
+			
+			'ThisDoc.Launch(oDataMedium.FileName)
+			
+		Else
+		
+			MessageBox.Show("This command can only be used in a Drawing.")
+		
+		End If
+	Else
+	
+		MessageBox.Show("File must be saved to continue.", "File Not Saved",MessageBoxButtons.OK,MessageBoxIcon.Error)
+
+	End If
+End Sub
+
+
+
+
+Function BrowseForFolder As Object
+     'Function purpose:  To Browser for a user selected folder.
+     'If the "OpenAt" path is provided, open the browser at that directory
+     'NOTE:  If invalid, it will open at the Desktop level
+	customPropertySet = ThisDoc.Document.PropertySets.Item("Inventor User Defined Properties")
+	
+	Dim OpenAt As String = "C:\Box\PRJ Operations" 'iProperties.Value("Custom", "ExportPath")
+	
+    Dim ShellApp As Object
+
+     'Create a file browser window at the default folder
+    ShellApp = CreateObject("Shell.Application"). _
+    BrowseForFolder(0, "Please choose a folder for BOX export", 0, OpenAt)
+     
+    If ShellApp Is Nothing Then
+        BrowseForFolder = ""
+        Exit Function
+    End If
+     
+     'Set the folder to that selected.  (On error in case cancelled)
+    On Error Resume Next
+    BrowseForFolder = ShellApp.self.Path
+    On Error GoTo 0
+
+     'Destroy the Shell Application
+    ShellApp = Nothing
+	
+		'save the export path as a custom property in the iam
+		iProperties.Value("Custom", "ExportPath") = BrowseForFolder
+
+
+     'Check for invalid or non-entries and send to the Invalid error
+     'handler if found
+     'Valid selections can begin L: (where L is a letter) or
+     '\\ (as in \\servername\sharename.  All others are invalid
+    Select Case Mid(BrowseForFolder, 2, 1)
+    Case Is = ":"
+        If Left(BrowseForFolder, 1) = ":" Then GoTo Invalid
+    Case Is = "\"
+        If Not Left(BrowseForFolder, 1) = "\" Then GoTo Invalid
+    Case Else
+        GoTo Invalid
+    End Select
+
+    Exit Function
+
+Invalid:
+     'If it was determined that the selection was invalid, set to False
+    BrowseForFolder = False
+End Function

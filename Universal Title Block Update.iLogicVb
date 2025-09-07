@@ -1,0 +1,60 @@
+﻿ Sub Main TitleBlockCopy()
+	 
+	 'write to iLogic Log
+		SharedVariable("LogVar") = "UNIV TB UPDATE" 
+		iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")
+	 
+	 
+    Dim oNewDocument As DrawingDocument
+     oNewDocument = ThisApplication.ActiveDocument
+	 
+		 'present a File Selection dialog
+	Dim oFileDlg As Inventor.FileDialog = Nothing
+	InventorVb.Application.CreateFileDialog(oFileDlg)
+	oFileDlg.InitialDirectory = oOrigRefName
+	oFileDlg.CancelError = True
+	On Error Resume Next
+	oFileDlg.ShowOpen()
+	If Err.Number <> 0 Then
+	Return
+	ElseIf oFileDlg.FileName <> "" Then
+	selectedfile = oFileDlg.FileName
+	End If 
+	 
+	 
+    
+    ' Open the new drawing to copy the title block into.
+    Dim oSourceDocument As DrawingDocument
+   'oSourceDocument = ThisApplication.Documents.Open("C:\_vaultWIP\Designs\Templates\Universal\GENERAL UNIVERSAL TITLE BLOCK SIZE B TEMPLATE.dwg", False)
+   oSourceDocument = ThisApplication.Documents.Open(selectedfile, False)
+   
+    ' Get the new source title block definition.
+    Dim oSourceTitleBlockDefs As TitleBlockDefinitions
+    oSourceTitleBlockDefs = oSourceDocument.TitleBlockDefinitions
+	
+	For Each oSourceTitleBlockDef As TitleBlockDefinition In oSourceTitleBlockDefs
+    
+    ' Copy the Title Block Definitions to the new doc
+    Dim oNewTitleBlockDef As TitleBlockDefinition
+    oNewTitleBlockDef = oSourceTitleBlockDef.CopyTo(oNewDocument, True)
+	
+	Next
+	
+	'Get the new Border Definitions
+	Dim oSourceBorderDefs As BorderDefinitions
+	oSourceBorderDefs = oSourceDocument.BorderDefinitions
+	
+	For Each oSourceBorderDef As BorderDefinition In oSourceBorderDefs
+	
+	'Copy the Border Definitions to the new doc
+	Dim oNewBorderDef As BorderDefinition
+	oNewBorderDef = oSourceBorderDef.CopyTo(oNewDocument, True)
+	
+	Next
+	
+	oSourceDocument.Close
+	oNewDocument.Activate
+	
+	MessageBox.Show("Title Block and Border definitions have been updated!", "WooOOOOOooo")
+	
+	End Sub		

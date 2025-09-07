@@ -1,0 +1,56 @@
+﻿''https://forums.autodesk.com/t5/inventor-programming-ilogic/generate-all-members-of-a-content-familiar/td-p/11566816
+
+
+'active assembly
+Dim oMainAsm As AssemblyDocument = ThisDoc.Document
+Dim oAsmDef As AssemblyComponentDefinition = oMainAsm.ComponentDefinition
+
+' get the occurrence by its position in the occurrences collection
+Dim oOcc As ComponentOccurrence = oAsmDef.Occurrences.Item(1)
+Dim oDef As PartComponentDefinition = oOcc.Definition
+Dim oDoc As PartDocument = oDef.Document
+
+'reference to the CC properties - oProps
+Dim oPropSets As PropertySets = oDoc.PropertySets
+Dim oProps As PropertySet = oPropSets.Item("Content Library Component Properties")
+
+' family id
+Dim oProp As Inventor.Property = oProps.Item("FamilyId")
+Dim FamilyId As String = oProp.Value
+'MsgBox("FamilyId: " + FamilyId)
+
+'reference to the ContentFamily
+Dim oContentCenter As ContentCenter = ThisApplication.ContentCenter
+Dim oFamily As ContentFamily = oContentCenter.GetContentObject("v3#" + FamilyId + "#")
+'MsgBox("Content Family DisplayName:  " + oFamily.DisplayName & vbNewLine & _'        "Rows in Family:  " & oFamily.TableRows.Count )'
+
+''create new member file
+Dim ErrorType As MemberManagerErrorsEnum
+Dim strContentPartFileName As String
+Dim strErrorMessage As String
+
+Dim offset As Double = 0
+
+' Do a loop here for all the rows.
+For i As Integer = 1 To oFamily.TableRows.Count
+
+	strContentPartFileName = oFamily.CreateMember(i, ErrorType, strErrorMessage)
+	
+	' Place the part into the assembly.
+	Dim transMatrix As Matrix = ThisApplication.TransientGeometry.CreateMatrix
+	
+	transMatrix.Cell(2, 4) = offset
+	
+	oOcc = oAsmDef.Occurrences.Add(strContentPartFileName, transMatrix)
+	
+	' Compute the position for the next placement based on the size of the part just placed.
+	Dim minY As Double = oOcc.RangeBox.MinPoint.Y
+	
+	Dim maxY As Double = oOcc.RangeBox.MaxPoint.Y
+	
+	offset = offset + ((maxY - minY) * 1.15)
+
+Next
+
+' Msgbox to alert the process is done.
+MsgBox("All " & oFamily.TableRows.Count & " c/c family items are created.")

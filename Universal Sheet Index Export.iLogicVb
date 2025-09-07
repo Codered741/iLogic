@@ -1,0 +1,96 @@
+﻿AddReference "Microsoft.Office.Interop.Excel.dll"
+Imports Microsoft.Office.Interop
+Imports Microsoft.Office.Interop.Excel
+Imports System.IO.Path
+Imports System.IO
+Imports System.Collections
+If ThisDoc.Document.DocumentType <> DocumentTypeEnum.kDrawingDocumentObject Then
+	MsgBox("A Drawing document must be active for this code to work. Exiting.", vbCritical, "")
+	Exit Sub
+End If
+Dim oDDoc As DrawingDocument = ThisDoc.Document
+Dim oSheets As Inventor.Sheets = oDDoc.Sheets
+Dim oASheet As Inventor.Sheet = oSheets.Item(1)
+Dim oData As New List(Of String)
+oPath = ThisDoc.Path
+oFileName = ThisDoc.FileName(False) 'without extension
+excelApp = GoExcel.Application
+
+'write to iLogic Log
+SharedVariable("LogVar") = "UNIV TOC EXPORT" 
+iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")
+
+
+Dim Filename As String = (oPath & "\" & oFileName & ".xlsx")
+
+'Check for existing Excel file
+If System.IO.File.Exists(Filename) = False
+
+Dim oExcel As New Microsoft.Office.Interop.Excel.ApplicationClass
+oExcel.DisplayAlerts = False
+oExcel.Visible = False
+'create new Excel Workbook (document)
+Dim oWB As Excel.Workbook = oExcel.Workbooks.Add()
+'create new Excel Worksheet (sheet)
+'Dim oWS As Excel.Worksheet = oWB.Worksheets.Add()
+'auto-fit the columns
+'oWS.Columns.AutoFit
+
+oWB.SaveAs(oPath & "\" & oFileName & ".xlsx")
+
+
+oWB.Close
+'quit the Excel application instance we started
+oExcel.Quit
+oExcel = Nothing
+
+Else
+End If
+
+
+GoExcel.Open (oPath & "\" & oFileName & ".xlsx")
+
+For Each oSheet As Inventor.Sheet In oSheets
+	Dim oPg As String = (oSheet.Name.Split(":").Last)
+	Dim oFPg As String
+	
+	If Len(oPg) = 1 Then
+		oFPg = "000" & oPg
+	Else If Len(oPg) = 2 Then	
+		oFPg = "00" & oPg
+	Else If Len(oPg) = 3 Then
+		oFPg = "0" & oPg
+	End If	
+	'MessageBox.Show(oFPg, "Title")
+	Dim aCol As String = "A" & oPg
+	Dim bCol As String = "B" & oPg
+GoExcel.CellValue(oPath & "\" & oFileName & ".xlsx", "Sheet1", aCol) = (iProperties.Value("Project", "Part Number") & "-" & oFPg)
+GoExcel.CellValue(oPath & "\" & oFileName & ".xlsx", "Sheet1", bCol) = (oSheet.Name.Split(":").First)
+
+	'oData.Add(iProperties.Value("Project", "Part Number") & "-" & oFPg)
+	'oData.Add(oSheet.Name.Split(":").First)
+Next
+
+
+GoExcel.Save
+GoExcel.Close
+MessageBox.Show(oPath & "\" & oFileName & ".xlsx", "DONE!")
+
+
+
+'Dim sTitle As String = "TABLE OF CONTENTS"
+'Dim Pt2d As Inventor.Point2d = ThisApplication.TransientGeometry.CreatePoint2d(0, 0)
+'Dim iCols As Integer = 2
+'Dim iRows As Integer = oSheets.Count
+'Dim oColTitles() As String = {"SHEET", "CONTENTS" }
+'Dim oContents() As String = oData.ToArray
+
+
+''GoExcel.CellValues("C:\_vaultWIP\Designs\SHEETLIST.xlsx", "Sheet1", "A2", "") = oData
+
+
+'Dim oCTable As Inventor.CustomTable
+'oCTable = oASheet.CustomTables.Add(sTitle, Pt2d, iCols, iRows, oColTitles, oContents)
+'oCTable.HeadingPlacement = HeadingPlacementEnum.kHeadingAtTop
+'oCTable.ShowTitle = True
+'oCTable.TableDirection = TableDirectionEnum.kTopDownDirection

@@ -1,0 +1,52 @@
+﻿' Start of iLogic rule =================================================
+' This iLogic rule automatically creates a new iLogic rule in the active document.
+Dim oDoc As Document = ThisApplication.ActiveDocument
+Dim RuleName As String = "Universal Property Update"
+Dim RuleText As String = "' Universal Property Update" & Chr(10) & _
+                         "oMVP1 = Show" & Chr(10) & _ 
+                         "oMVP2 = Element" & Chr(10) & _ 
+                         "oMVP3 = Kit" & Chr(10) & _
+						 "iLogicVb.RunExternalRule(" & Chr(34) & "Universal Menus" & Chr(34) & ")" & Chr(10) & _
+						 "InventorVb.DocumentUpdate()"
+		
+
+
+						  				  
+'Dim oDoc As Document = ThisApplication.ActiveDocument                         
+Dim RuleAlreadyExists As Boolean = False
+' Define the iLogic addin
+Dim iLogicAddIn As ApplicationAddIn = ThisApplication.ApplicationAddIns.ItemById("{3bdd8d79-2179-4b11-8a5a-257b1c0263ac}")
+' Get the iLogic automation object
+Dim iLogic As Object = iLogicAddIn.Automation
+' Get the list of iLogic rules in the current Inventor document
+Dim RuleList As System.Collections.IEnumerable = iLogic.Rules(oDoc)
+
+' Loop through all rules in document
+Try
+For Each R As Object In RuleList
+    If R.Name = RuleName Then
+        ' A rule with the same name already exists...
+        RuleAlreadyExists = True
+        Exit For
+    End If
+Next
+Catch
+End Try
+
+If RuleAlreadyExists Then
+    Dim ReplaceRule As MsgBoxResult = MsgBox("A rule called '" & RuleName & "' already exists - replace it?", 36, "Excitech iLogic")
+    If ReplaceRule = vbYes Then
+        ' Delete the existing rule
+        iLogic.DeleteRule(oDoc, RuleName)
+        ' Add the new rule
+        iLogic.AddRule(oDoc, RuleName, RuleText)
+    Else
+        MsgBox("Operation cancelled...", 64, "Excitech iLogic")
+        Exit Sub
+    End If
+Else
+    ' No existing rule to delete - simply add the new rule
+    iLogic.AddRule(oDoc, RuleName, RuleText)
+End If
+
+' End of iLogic rule =================================================

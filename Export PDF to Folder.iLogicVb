@@ -1,0 +1,146 @@
+﻿
+
+
+Sub Main()
+	Dim oDoc As Document = ThisApplication.ActiveDocument
+	'Create an entry in the Log File
+	SharedVariable("LogVar") = "Export PDF to Folder"
+	iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")	
+	
+	If isSaved(oDoc) = True AndAlso isDwg(oDoc) = True Then
+
+		'==============================================
+		'Attempt to add the ExportPath property and check if previous path exists. 
+		'Prompt to use existing path
+		'Otherwise call the BrowseForFolder function to choose destination folder
+		customPropertySet = ThisDoc.Document.PropertySets.Item("Inventor User Defined Properties")
+	Try
+		customPropertySet.Add("Custom", "ExportPath")
+	Catch
+	End Try
+		
+	If 	iProperties.Value("Custom", "ExportPath") <> "" Then
+		QP=MessageBox.Show("Use previous export path?" & vbLf & iProperties.Value("Custom", "ExportPath"),"Export Path",MessageBoxButtons.YesNoCancel,MessageBoxIcon.Question)
+			If QP = vbYes Then
+				SharedVariable("PathSelected")=iProperties.Value("Custom", "ExportPath")
+			Else If QP = vbNo Then
+				SharedVariable("PathSelected") = BrowseForFolder
+			Else If QP = vbCancel Then
+				Exit Sub
+			End If	
+	Else 
+		SharedVariable("PathSelected") = BrowseForFolder
+	End If
+		'PathSelected=BrowseForFolder
+		'************************************
+		
+		'==============================================
+
+		oFileName = ThisDoc.FileName(False) 'without extension
+		oRevNum = iProperties.Value("Project", "Revision Number")
+		oDesc = iProperties.Value("Project", "Description")
+		oPrj = iProperties.Value("Project", "Project")
+		oPDFAddIn = ThisApplication.ApplicationAddIns.ItemById ("{0AC6FD95-2F4D-42CE-8BE0-8AEA580399E4}")
+		oDocument = ThisApplication.ActiveDocument
+		oContext = ThisApplication.TransientObjects.CreateTranslationContext
+		oContext.Type = IOMechanismEnum.kFileBrowseIOMechanism
+		oOptions = ThisApplication.TransientObjects.CreateNameValueMap
+		oDataMedium = ThisApplication.TransientObjects.CreateDataMedium
+		If oPDFAddIn.HasSaveCopyAsOptions(oDataMedium, oContext, oOptions) Then
+			oOptions.Value("All_Color_AS_Black") = 0
+			oOptions.Value("Remove_Line_Weights") = 1
+			oOptions.Value("Vector_Resolution") = 400
+			oOptions.Value("Sheet_Range") = Inventor.PrintRangeEnum.kPrintAllSheets
+		End If
+
+		oDataMedium.FileName = SharedVariable("PathSelected") & "\" & oFileName & " - " & oPrj & " - " & oDesc & " - rev" & oRevNum & " " & Now.ToString("yyyyMMdd") & ".pdf"
+		'Publish document
+		Try
+			oPDFAddIn.SaveCopyAs(oDocument, oContext, oOptions, oDataMedium)
+			MessageBox.Show(oDataMedium.FileName, "File Created ", MessageBoxButtons.OK)
+		Catch
+			MessageBox.Show("You do not have permission to write to the PDF.  Please check the PDF out and try again.  ", "Write Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Error)
+			Exit Sub
+		End Try	
+	Else
+	
+			MessageBox.Show("This command can only be used in a Drawing.")	
+		
+	End If
+	
+	
+End Sub
+
+
+
+
+Function BrowseForFolder As Object
+     'Function purpose:  To Browser for a user selected folder.
+     'If the "OpenAt" path is provided, open the browser at that directory
+     'NOTE:  If invalid, it will open at the Desktop level
+	customPropertySet = ThisDoc.Document.PropertySets.Item("Inventor User Defined Properties")
+	
+	'Dim OpenAt As String = "R:\PRODUCT DEVELOPEMENT 2013 - 13-A-0010\E-WORLD\schematics" 'iProperties.Value("Custom", "ExportPath")
+	
+    Dim ShellApp As Object
+
+     'Create a file browser window at the default folder
+    ShellApp = CreateObject("Shell.Application"). _
+    BrowseForFolder(0, "Please choose a folder", 0, OpenAt)
+     
+    If ShellApp Is Nothing Then
+        BrowseForFolder = ""
+        Exit Function
+    End If
+     
+     'Set the folder to that selected.  (On error in case cancelled)
+    On Error Resume Next
+    BrowseForFolder = ShellApp.self.Path
+    On Error GoTo 0
+
+     'Destroy the Shell Application
+    ShellApp = Nothing
+	
+		'save the export path as a custom property in the iam
+		iProperties.Value("Custom", "ExportPath") = BrowseForFolder
+
+
+     'Check for invalid or non-entries and send to the Invalid error
+     'handler if found
+     'Valid selections can begin L: (where L is a letter) or
+     '\\ (as in \\servername\sharename.  All others are invalid
+    Select Case Mid(BrowseForFolder, 2, 1)
+    Case Is = ":"
+        If Left(BrowseForFolder, 1) = ":" Then GoTo Invalid
+    Case Is = "\"
+        If Not Left(BrowseForFolder, 1) = "\" Then GoTo Invalid
+    Case Else
+        GoTo Invalid
+    End Select
+
+    Exit Function
+
+Invalid:
+     'If it was determined that the selection was invalid, set to False
+    BrowseForFolder = False
+End Function
+
+Function isDwg(ThisDoc As Document) As Boolean
+	Debug.Print (ThisDoc.DocumentType)
+	If ThisDoc.DocumentType = kDrawingDocumentObject
+		isDwg = True	
+	Else 
+		isDwg = False
+	End If
+End Function
+
+
+
+Function isSaved(Doc As Document) As Boolean
+	If Doc.FileSaveCounter >= 1 Then
+		Return True
+	Else
+		Return False
+	End If
+End Function
+

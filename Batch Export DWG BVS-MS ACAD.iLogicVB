@@ -1,0 +1,426 @@
+﻿Imports System.IO
+Imports System.IO.File
+
+Sub Main()
+
+	Dim usrTimeAck = MessageBox.Show("This rule will find all drawings of parts referenced in the BOM and Export them as ACAD DWGs at Base View Scale in Model Space to a folder path of your choosing. "  _
+		& vbLf & "This process can take some time to run, and cannot be stopped once started.  ", "Time Warning                                         ", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning)
+		
+	If usrTimeAck = vbCancel Then
+		Exit Sub
+	End If
+	
+	Dim VaultAddin As Inventor.ApplicationAddIn = ThisApplication.ApplicationAddIns.ItemById("{48B682BC-42E6-4953-84C5-3D253B52E77B}")
+	VaultAddin.Deactivate()
+
+
+		
+	Try 'Set values for file name length check. 
+		Dim oDoc As Document = ThisApplication.ActiveDocument
+		Dim FileNameMinLong As Integer = 21
+		Dim SmartPart As Integer = 6
+		'check if active document is an assembly
+		If isAsm(oDoc) = False
+			MsgBox("Please run from an Assembly")
+			Return
+		End If
+		
+		'==============================================
+		'Attempt to add the ExportPath property and check if previous path exists. 
+		'Prompt to use existing path
+		'Otherwise call the BrowseForFolder function to choose destination folder
+		customPropertySet = ThisDoc.Document.PropertySets.Item("Inventor User Defined Properties")
+	Try
+		customPropertySet.Add("Custom", "ExportPath")
+	Catch
+	End Try
+		
+	If 	iProperties.Value("Custom", "ExportPath") <> "" Then
+		QP=MessageBox.Show("Use previous export path?" & vbLf & iProperties.Value("Custom", "ExportPath"),"Export Path",MessageBoxButtons.YesNoCancel,MessageBoxIcon.Question)
+			If QP = vbYes Then
+				SharedVariable("PathSelected")=iProperties.Value("Custom", "ExportPath")
+			Else If QP = vbNo Then
+				SharedVariable("PathSelected") = BrowseForFolder
+			Else If QP = vbCancel Then
+				Exit Sub
+			End If	
+	Else 
+		SharedVariable("PathSelected") = BrowseForFolder
+	End If
+		'PathSelected=BrowseForFolder
+		'************************************
+		
+		'write to iLogic Log
+		SharedVariable("LogVar") = "Batch Export BVS-MS" 
+		iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")
+		
+
+		Dim oAppend As System.IO.StreamWriter
+		noWrite = True
+		
+		Dim lstDrawings as New List(of String)
+		
+		Dim BOMDocs As New List(of String)
+	
+		'get list of part numbers from Structured BOM
+		GetDocsFromBOM(ThisApplication.ActiveDocument, BOMDocs)
+		
+		
+		 Dim oProgressBar as Inventor.ProgressBar
+		' Dim DocCount = oRefDocs.Count
+		 oProgressBar = ThisApplication.CreateProgressBar(False, BOMDocs.Count, "Finding Drawings...")
+
+		'Attempt to find a drawing file of the same name as the assembly doc
+		'==============================================================================
+'		RefDwgFullFileName = FindDrawingFilePN(oDoc)
+				
+'		oProgressBar.Message = "Checking for drawing of " & oDoc.FullFileName
+'		oProgressBar.UpdateProgress
+		
+'		If RefDwgFullFileName.Length > FileNameMinLong Then 
+		
+'			lstDrawings.Add(RefDwgFullFileName)
+			
+'		End If
+		'******************************************************************************
+		
+		'Dim bDoc as Document
+		For Each BOMDoc as String In BOMDocs
+			bDoc = ThisApplication.Documents.ItemByName(BOMDoc) 'convert full file name to document object
+			
+			oProgressBar.Message = "Checking for drawing of " & BOMDoc 'oRefDoc.FullFileName
+			oProgressBar.UpdateProgress
+
+			'Attempt to find a drawing file of the same name as the model doc
+			RefDwgFullFileName = FindDrawingFilePN(bDoc)
+			 PN = SharedVariable("pn").Value
+			 MB = SharedVariable("mb").Value
+			'Check file name length and part number length. Used to filter out anything that's not a 6 digit part number. 
+			If RefDwgFullFileName.Length > FileNameMinLong And PN.Length = SmartPart And MB = "Make" Then 
+			
+				lstDrawings.Add(RefDwgFullFileName)
+
+			End If
+			
+		Next
+		
+		oProgressBar.Close		
+		'call the ExportDwgs sub
+		ExportDwgs(oDoc.FullFileName, lstDrawings)
+		
+		' CopyPostInfo(oDoc)
+
+		
+	Catch Ex as Exception
+	
+		MsgBox("Main error: " & Ex.Message)
+		
+	Finally 
+	
+		'VaultAddin.Activate
+		
+	End Try
+	
+End Sub 'Main
+
+Private Sub ExportDwgs(strFilePath as String, lstDwgsPrint as List(of String))
+	
+	'Dim PDFCreatorQueue As Queue = New Queue
+	'Dim job As Object
+	Dim fullPath As String
+
+	Dim oProgressBar As Inventor.ProgressBar = ThisApplication.CreateProgressBar(False, lstDwgsPrint.Count, "Exporting Drawings...")
+
+	Try
+
+		fullPath = DocumentFileName(strFilePath) 'Path.Combine(Path.GetTempPath, Path.GetTempFileName)
+		
+		'savepath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Desktop) & "\" & IO.Path.GetFileNameWithoutExtension(strFilePath) & "\" & Now.ToString("yyyyMMddHHmm") & "\"
+		savepath =  SharedVariable("PathSelected")& "\" & IO.Path.GetFileNameWithoutExtension(strFilePath) & "\" & Now.ToString("yyyy-MM-dd   HH.mm") & "\"
+
+		
+
+		System.IO.Directory.CreateDirectory(savepath)
+		'MsgBox("Initializing PDFCreator queue...")
+		'PDFCreatorQueue.Initialize()
+		
+		'setup options for open
+		Dim oOptions as NameValueMap = ThisApplication.TransientObjects.CreateNameValueMap
+		oOptions.Value("DeferUpdates") = True
+		oOptions.Value("FastOpen") = True
+		'=================================================================
+		  ' Get the DWG translator Add-In.
+    	Dim DWGAddIn As TranslatorAddIn
+    	DWGAddIn = ThisApplication.ApplicationAddIns.ItemById("{C24E3AC2-122E-11D5-8E91-0010B541CD80}")
+
+    	Dim oContext As TranslationContext
+    	oContext = ThisApplication.TransientObjects.CreateTranslationContext
+    	oContext.Type = kFileBrowseIOMechanism
+		
+	    ' Create a NameValueMap object
+	    Dim oSaveOpts As NameValueMap
+	    oSaveOpts = ThisApplication.TransientObjects.CreateNameValueMap
+
+	    ' Create a DataMedium object
+	    Dim oDataMedium As DataMedium
+	    oDataMedium = ThisApplication.TransientObjects.CreateDataMedium
+
+	    
+		
+		'*******************************************************************
+		
+		
+	
+		'MsgBox("Printing windows test page...")
+		For Each DwgName As String In lstDwgsPrint
+		
+			oProgressBar.Message = "Exporting drawing file: " & DwgName
+			oProgressBar.UpdateProgress
+			DWG = ThisApplication.Documents.OpenWithOptions(DwgName, oOptions, True)
+						
+			'Get the desc and rev from the drawing to include in the new file name
+			Dim DESC As String = ThisApplication.ActiveDocument.PropertySets.Item("Design Tracking Properties").Item("Description").Value
+			Dim REV As String = ThisApplication.ActiveDocument.PropertySets.Item("Inventor Summary Information").Item("Revision Number").Value
+		
+	'========================================================================		
+		' Check whether the translator has 'SaveCopyAs' options
+			    If DWGAddIn.HasSaveCopyAsOptions(DWG, oContext, oSaveOpts) Then
+					'specify the ini file for the export settings
+			        Dim strIniFile As String
+			        strIniFile = "C:\_vaultWIP\Designs\Templates\Library\iLogic\dwg_export.ini"
+			        ' Create the name-value that specifies the ini file to use.
+			        oSaveOpts.Value("Export_Acad_IniFile") = strIniFile
+			    End If	
+				
+		    'Set the destination file name
+    		oDataMedium.FileName = (savepath & IO.Path.GetFileNameWithoutExtension(DwgName) & " - " & DESC & " - REV_" & REV & ".dwg")
+			'oDataMedium.FileName = (savepath & IO.Path.GetFileNameWithoutExtension(DwgName) &".dwg")
+			'Publish document.
+    		Call DWGAddIn.SaveCopyAs(DWG, oContext, oSaveOpts, oDataMedium)
+			
+	'***********************************************************************************		
+			
+			'DWG.SaveCopyAs(savepath & IO.Path.GetFileNameWithoutExtension(DwgName) & ".dwg", True)
+			'DWG.SaveAs(savepath & IO.Path.GetFileNameWithoutExtension(DwgName) & ".dwg", True)
+			'---DwgPrint("PDFCreator")
+			ThisApplication.ActiveDocument.Close(True)
+			
+		Next
+		'open Explorer and go to the newly created folder
+		Process.Start("explorer.exe", "/select," & savepath)
+		
+	Catch Ex As Exception
+	
+		MessageBox.Show("ExportDwgs Error: " & Ex.Message)
+		
+	Finally
+
+		oProgressBar.Close
+		
+		
+	End Try
+	
+End Sub
+
+Sub GetDocsFromBOM(oDoc as Document, ByRef BOMDocs as List(of String))
+	
+	If oDoc.DocumentType <> kAssemblyDocumentObject Then
+		MsgBox("This rule can only be run from an assembly")
+		Exit Sub
+	End If
+	
+	Dim oDocBOM As BOM = oDoc.ComponentDefinition.BOM
+
+	oDocBOM.StructuredViewEnabled = True
+	oDocBOM.StructuredViewFirstLevelOnly = False
+	oDocBOM.PartsOnlyViewEnabled = False
+	
+	Dim oBOMView as BOMView = oDocBOM.BOMViews.Item("Structured")	
+	Dim oBOMRows As BOMRowsEnumerator = oBOMView.BOMRows
+	Dim oCompDef As ComponentDefinition
+	Dim oPNProp as Inventor.Property
+	
+	For Each oRow as BOMRow in oBOMRows
+		
+			GetBOMRowDocFile(oRow, BOMDocs)
+		
+	Next 
+	
+End Sub
+
+Sub GetBOMRowDocFile(oRow as BOMRow, ByRef BOMDocs as List(of String))
+	
+	Dim oCompDef As ComponentDefinition
+	
+	'Add the part number of the current row, for parts that have children
+	oCompDef = oRow.ComponentDefinitions.Item(1)
+	
+	If oCompDef.Type = 100675072 Then 'exclude Virtual Components
+		'do nothing
+	Else If oCompDef.Type = 50392320 Then 'exclude Content Center
+		'do nothing
+	Else	
+		
+
+		DocName = oCompDef.Document.FullFileName
+
+		If Not BOMDocs.Contains(DocName) Then
+			BOMDocs.Add(DocName)
+		End If
+		
+	End If
+		
+	If Not oRow.ChildRows Is Nothing Then
+	
+		For Each oChildRow as BOMRow in oRow.ChildRows		
+			GetBOMRowDocFile(oChildRow, BOMDocs)
+		Next
+		
+	End If
+	
+End Sub
+
+Function FindDrawingFilePN(PartOrAssemblyDoc As Document) As String
+    Dim fullFilenamePN As String
+    fullFilenamePN = PartOrAssemblyDoc.fullFilename
+   
+    ' Extract the path from the full filename.
+    Dim path As String = ThisApplication.DesignProjectManager.ActiveDesignProject.WorkspacePath
+
+	Dim iProps As PropertySet = PartOrAssemblyDoc.PropertySets.Item("Design Tracking Properties")
+	Dim cProps As PropertySet = PartOrAssemblyDoc.PropertySets.Item("Inventor User Defined Properties")
+	Dim mb = cProps.Item("MAKE-BUY")
+	Dim pn = iProps.Item("Part Number")
+	SharedVariable("mb")=mb
+	SharedVariable("pn")=pn  'Create a shared variable used for filtering out eparts
+    Dim filename As String = pn.Value
+
+    ' Find if the drawing exists.
+    Dim drawingFilename As String
+    drawingFilename = ThisApplication.DesignProjectManager.ResolveFile(path, filename & ".dwg")
+   
+    ' Check the result.
+    If drawingFilename = "" Then
+       
+        ' Find if the drawing exists.
+        drawingFilename = ThisApplication.DesignProjectManager.ResolveFile(path, filename & ".idw")
+   
+        ' Return the result.
+        If drawingFilename <> "" Then
+            Return drawingFilename
+        Else
+            Return ""
+        End If
+    Else
+        ' Return the result.
+         Return drawingFilename
+    End If
+End Function 'FindDrawingFilePNN
+
+Function BrowseForFolder As Object
+     'Function purpose:  To Browser for a user selected folder.
+     'If the "OpenAt" path is provided, open the browser at that directory
+     'NOTE:  If invalid, it will open at the Desktop level
+	customPropertySet = ThisDoc.Document.PropertySets.Item("Inventor User Defined Properties")
+	
+	'Dim OpenAt As String = "R:\PRODUCT DEVELOPEMENT 2013 - 13-A-0010\E-WORLD\schematics" 'iProperties.Value("Custom", "ExportPath")
+	
+    Dim ShellApp As Object
+
+     'Create a file browser window at the default folder
+    ShellApp = CreateObject("Shell.Application"). _
+    BrowseForFolder(0, "Please choose a folder", 0, OpenAt)
+     
+    If ShellApp Is Nothing Then
+        BrowseForFolder = ""
+        Exit Function
+    End If
+     
+     'Set the folder to that selected.  (On error in case cancelled)
+    On Error Resume Next
+    BrowseForFolder = ShellApp.self.Path
+    On Error GoTo 0
+
+     'Destroy the Shell Application
+    ShellApp = Nothing
+	
+		'save the export path as a custom property in the iam
+		iProperties.Value("Custom", "ExportPath") = BrowseForFolder
+
+
+     'Check for invalid or non-entries and send to the Invalid error
+     'handler if found
+     'Valid selections can begin L: (where L is a letter) or
+     '\\ (as in \\servername\sharename.  All others are invalid
+    Select Case Mid(BrowseForFolder, 2, 1)
+    Case Is = ":"
+        If Left(BrowseForFolder, 1) = ":" Then GoTo Invalid
+    Case Is = "\"
+        If Not Left(BrowseForFolder, 1) = "\" Then GoTo Invalid
+    Case Else
+        GoTo Invalid
+    End Select
+
+    Exit Function
+
+Invalid:
+     'If it was determined that the selection was invalid, set to False
+    BrowseForFolder = False
+End Function
+
+
+
+
+
+
+'Private Sub DwgPrint(PrinterName as String)
+'	Dim oPrintMgr As DrawingPrintManager = ThisApplication.ActiveDocument.PrintManager
+'	' Get the name of the printer that will be used.
+'	oPrintMgr.Printer = PrinterName
+	
+'	' Set to print in color.
+'	oPrintMgr.ColorMode = 13313 'kPrintColorPalette
+	
+'	' Set to print one copies.
+'	oPrintMgr.NumberOfCopies = 1
+	
+'	' Set to print using landscape orientation.
+'	oPrintMgr.Orientation = 13570
+'		'13570 'kLandscapeOrientation
+'		'13569 'kPortraitOrientation
+	
+'	' Set the paper size.
+'	oPrintMgr.PaperSize = 14338
+'		'14338 'kPaperSize11x17
+	
+'	' Set to print all sheets.
+'	oPrintMgr.PrintRange = 14082 'kPrintAllSheets
+	
+'	' Set to print full scale.
+'	oPrintMgr.ScaleMode = 13825 'kPrintFullScale
+	
+'	' Submit the print.
+'	oPrintMgr.SubmitPrint
+'End Sub 'DwgPrint
+
+'Private Sub printTestFile()
+'	Dim ShellObj As Object
+
+'	ShellObj = CreateObject("Shell.Application")
+'	ShellObj.ShellExecute("RUNDLL32.exe", "PRINTUI.DLL,PrintUIEntry /k /n ""PDFCreator""", "", "open", 1)
+'End Sub
+
+Function DocumentFileName(Doc As String) As String
+	DocumentFileName = Left(Doc, Doc.Length - 4)
+	'MsgBox(DocumentFileName)
+End Function 'DocumentFileName
+
+Function isAsm(ThisDoc As Document) As Boolean
+	Debug.Print (ThisDoc.DocumentType)
+	If ThisDoc.DocumentType = kAssemblyDocumentObject Then
+		isAsm = True
+	Else
+		isAsm = False
+	End If
+End Function 'isAsm
+

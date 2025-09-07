@@ -1,0 +1,93 @@
+﻿
+'This rule fills blank properties with a "-"
+
+If iProperties.Value("Custom", "REV 1 DATE") = ("")
+	iProperties.Value("Custom", "REV 1 DATE") = (" _ ")
+End If	
+If iProperties.Value("Custom", "REV 1 BY") = ("")
+	iProperties.Value("Custom", "REV 1 BY") = (" _ ")
+End If		
+ If iProperties.Value("Custom", "REV 1 DESCRIPTION") = ("")
+	iProperties.Value("Custom", "REV 1 DESCRIPTION") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 1 APPROVED BY") = ("")
+	iProperties.Value("Custom", "REV 1 APPROVED BY") = (" _ ")
+End If	
+
+If iProperties.Value("Custom", "REV 2 DATE") = ("")
+	iProperties.Value("Custom", "REV 2 DATE") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 2 BY") = ("")
+	iProperties.Value("Custom", "REV 2 BY") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 2 DESCRIPTION") = ("")
+	iProperties.Value("Custom", "REV 2 DESCRIPTION") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 2 APPROVED BY") = ("")
+	iProperties.Value("Custom", "REV 2 APPROVED BY") = (" _ ")
+
+End If	
+If iProperties.Value("Custom", "REV 3 DATE") = ("")
+	iProperties.Value("Custom", "REV 3 DATE") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 3 BY") = ("")
+		iProperties.Value("Custom", "REV 3 BY") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 3 DESCRIPTION") = ("")
+	iProperties.Value("Custom", "REV 3 DESCRIPTION") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 3 APPROVED BY") = ("")
+	iProperties.Value("Custom", "REV 3 APPROVED BY") = (" _ ")
+
+End If	
+If iProperties.Value("Custom", "REV 4 DATE") = ("")
+	iProperties.Value("Custom", "REV 4 DATE") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 4 BY") = ("")
+	iProperties.Value("Custom", "REV 4 BY") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 4 DESCRIPTION") = ("")
+	iProperties.Value("Custom", "REV 4 DESCRIPTION") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 4 APPROVED BY") = ("")
+	iProperties.Value("Custom", "REV 4 APPROVED BY") = (" _ ")
+
+End If	
+If iProperties.Value("Custom", "REV 5 DATE") = ("")
+	iProperties.Value("Custom", "REV 5 DATE") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 5 BY") = ("")
+	iProperties.Value("Custom", "REV 5 BY") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 5 DESCRIPTION") = ("")
+	iProperties.Value("Custom", "REV 5 DESCRIPTION") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 5 APPROVED BY") = ("")
+	iProperties.Value("Custom", "REV 5 APPROVED BY") = (" _ ")
+End If	
+If iProperties.Value("Custom", "REV 0 DATE") = ("")
+	iProperties.Value("Custom", "REV 0 DATE") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 0 BY") = ("")
+	iProperties.Value("Custom", "REV 0 BY") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 0 DESCRIPTION") = ("")
+	iProperties.Value("Custom", "REV 0 DESCRIPTION") = (" _ ")
+End If	
+If iProperties.Value("Custom", "REV 0 APPROVED BY") = ("")
+	iProperties.Value("Custom", "REV 0 APPROVED BY") = (" _ ")
+End If
+If iProperties.Value("Custom", "REV 6 DATE") = ("")
+	iProperties.Value("Custom", "REV 6 DATE") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 6 BY") = ("")
+	iProperties.Value("Custom", "REV 6 BY") = (" _ ")
+End If		
+If iProperties.Value("Custom", "REV 6 DESCRIPTION") = ("")
+	iProperties.Value("Custom", "REV 6 DESCRIPTION") = (" _ ")
+End If	
+If iProperties.Value("Custom", "REV 6 APPROVED BY") = ("")
+	iProperties.Value("Custom", "REV 6 APPROVED BY") = (" _ ")
+
+End If
+

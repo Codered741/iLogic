@@ -1,0 +1,86 @@
+﻿Sub Main ()
+
+
+oDoc = ThisApplication.ActiveDocument
+	If Not oDoc.DocumentType = kDrawingDocumentObject Then
+		MessageBox.Show("Please run this rule from a Drawing file.  ", "Drawing Only Rule", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		Exit Sub
+	End If
+	
+	
+	Dim oTrue As Boolean = True
+	Dim oFalse As Boolean = False
+	
+	customPropertySet = oDoc.PropertySets.Item("Inventor User Defined Properties")
+	Try
+	customPropertySet.Add("", "DRAWING_UNITS")
+	customPropertySet.Add("", "PDFStamp_AlignHorz")
+	customPropertySet.Add("", "PDFStamp_AlignVert")
+	customPropertySet.Add("", "PDFStamp_FontColour")
+	customPropertySet.Add("", "PDFStamp_FontSize(mm)")
+	customPropertySet.Add("", "PDFStamp_FontType")
+	
+	
+	customPropertySet.Add("", "PDFStamp_Include_Element")
+	customPropertySet.Add("", "PDFStamp_Include_JobNo")
+	customPropertySet.Add("", "PDFStamp_Include_Kit")
+	customPropertySet.Add("", "PDFStamp_Include_MakeQty")
+	customPropertySet.Add("", "PDFStamp_Include_Project")
+	
+	customPropertySet.Add("", "PDFStamp_Prefix_Element")
+	customPropertySet.Add("", "PDFStamp_Prefix_JobNo")
+	customPropertySet.Add("", "PDFStamp_Prefix_Kit")
+	customPropertySet.Add("", "PDFStamp_Prefix_MakeQty")
+	customPropertySet.Add("", "PDFStamp_Prefix_Project")	
+	
+	customPropertySet.Add("", "PDFStamp_PsnX_Element")
+	customPropertySet.Add("", "PDFStamp_PsnX_JobNo")
+	customPropertySet.Add("", "PDFStamp_PsnX_Kit")
+	customPropertySet.Add("", "PDFStamp_PsnX_MakeQty")
+	customPropertySet.Add("", "PDFStamp_PsnX_Project")	
+	
+	customPropertySet.Add("", "PDFStamp_PsnY_Element")
+	customPropertySet.Add("", "PDFStamp_PsnY_JobNo")
+	customPropertySet.Add("", "PDFStamp_PsnY_Kit")
+	customPropertySet.Add("", "PDFStamp_PsnY_MakeQty")
+	customPropertySet.Add("", "PDFStamp_PsnY_Project")	
+	customPropertySet.Add("", "PDFStamp_Setting")
+	
+		Catch
+		End Try	
+		
+
+iProperties.Value("Custom", "DRAWING_UNITS") = "mm"	
+iProperties.Value("Custom","PDFStamp_AlignHorz") = "RIGHT"
+iProperties.Value("Custom","PDFStamp_AlignVert") = "BOTTOM"
+iProperties.Value("Custom","PDFStamp_FontColour") = "BLACK"
+iProperties.Value("Custom","PDFStamp_FontSize(mm)") = "0"
+iProperties.Value("Custom","PDFStamp_FontType") = "DEFAULT"
+
+iProperties.Value("Custom", "PDFStamp_Include_Element") = oTrue
+iProperties.Value("Custom","PDFStamp_Include_JobNo") = oTrue
+iProperties.Value("Custom","PDFStamp_Include_Kit") = oTrue	
+iProperties.Value("Custom","PDFStamp_Include_MakeQty") = oTrue		
+iProperties.Value("Custom", "PDFStamp_Include_Project") = oTrue
+iProperties.Value("Custom", "PDFStamp_Prefix_Element") = "ELEMENT:"
+iProperties.Value("Custom", "PDFStamp_Prefix_JobNo") = "JOB NO:"
+iProperties.Value("Custom", "PDFStamp_Prefix_Kit") = "KIT:"
+iProperties.Value("Custom", "PDFStamp_Prefix_MakeQty") = "MAKE QTY:"
+iProperties.Value("Custom", "PDFStamp_Prefix_Project") = "PROJECT:"
+
+iProperties.Value("Custom", "PDFStamp_PsnX_Element") = 77.35
+iProperties.Value("Custom", "PDFStamp_PsnX_JobNo") = 77.35
+iProperties.Value("Custom", "PDFStamp_PsnX_Kit") = 77.35
+iProperties.Value("Custom", "PDFStamp_PsnX_MakeQty") = 77.35
+iProperties.Value("Custom", "PDFStamp_PsnX_Project") = 77.35
+
+iProperties.Value("Custom", "PDFStamp_PsnY_Element") = 42
+iProperties.Value("Custom", "PDFStamp_PsnY_JobNo") = 30
+iProperties.Value("Custom", "PDFStamp_PsnY_Kit") = 36
+iProperties.Value("Custom", "PDFStamp_PsnY_MakeQty") = 24
+iProperties.Value("Custom", "PDFStamp_PsnY_Project") = 48
+iProperties.Value("Custom", "PDFStamp_Setting") = "STANDARD"
+
+
+MessageBox.Show("Plot stamping properties added.  ", "WooOOOooOOOoo!", MessageBoxButtons.OK)
+End Sub 

@@ -1,0 +1,59 @@
+﻿
+Sub Main
+
+Dim oDoc As Document = ThisApplication.ActiveDocument	
+Dim oAsmCompDef As AssemblyComponentDefinition
+Dim oCompDef As Object
+oCompDef = ThisApplication.ActiveDocument.ComponentDefinition
+Dim oOccurrence As ComponentOccurrence
+
+
+	If oDoc.DocumentType = 12291 Then 'kAssemblyDocumentObject
+		'Set display name of active document
+		ThisDoc.Document.DisplayName=iProperties.Value(oDoc, "Project", "Part Number") & " | " & iProperties.Value(oDoc, "Project", "Description") & " | "
+		'Call sub Cycle to iterate through assembly
+ 		Call Cycle(oCompDef.Occurrences, 1)
+		
+	Else If oDoc.DocumentType = 12290 Then 'kPartDocumentObject
+		'Set display name of active document
+		ThisDoc.Document.DisplayName=iProperties.Value(oDoc, "Project", "Part Number") & " | " & iProperties.Value(oDoc, "Project", "Description") & " | "
+	
+	End If	
+
+
+InventorVb.DocumentUpdate
+'MessageBox.Show("Success", "WOOooOO", MessageBoxButtons.OK, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button1)
+End Sub
+
+Sub Cycle(Occurrences As ComponentOccurrences, Level As Integer)
+
+Dim oAsmCompDef As AssemblyComponentDefinition
+oAsmCompDef = ThisApplication.ActiveDocument.ComponentDefinition
+Dim oOccurrence As ComponentOccurrence
+	'Set values in each component
+	For Each oOccurrence In Occurrences
+		oSplit = Split(oOccurrence.Name, ":")
+		oInstance = ":" & oSplit(UBound(oSplit))
+		i = 1
+		oPn = iProperties.Value(oOccurrence.Name, "Project", "Part Number")
+		oDn = iProperties.Value(oOccurrence.Name, "Project", "Description")
+
+
+		Try
+			oOccurrence.Name = oPn & " | " & oDn & " | " & oInstance
+		Catch
+			oOccurrence.Name = oPn & " | " & oDn & " | " & oInstance + i
+		End Try
+		i = i+1
+
+	'Check subassemblies and update parts inside
+	If oOccurrence.DefinitionDocumentType = kAssemblyDocumentObject Then
+Call Cycle(oOccurrence.SubOccurrences, Level + 1)	
+End If	
+	Next
+
+'Else
+'	MessageBox.Show("Failed to set value. Rule will abort", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1)
+'	Return
+'End If
+End Sub 'Cycle

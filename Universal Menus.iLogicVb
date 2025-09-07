@@ -1,0 +1,342 @@
+﻿Sub Main()
+
+GoExcel.Close()
+
+	'XLpth = ("C:\_vaultWIP\Designs\Templates\Library\iLogic\Universal Show-Element-Kit List.xlsx")
+	XLpth = ("Y:\CAD STANDARDS\Inventor\Universal Show-Element-Kit List.xlsx")
+	
+	GoExcel.Open(XLpth, "Base")
+	
+	MultiValue.SetValueOptions(True, DefaultIndex := 0)
+	'MultiValue.SetList("ProjectNum" , "Collapsing Tower", "Mariner", "Jetski Launcher", "Masking Curtain", "Seaplane Launcher")
+	MultiValue.SetList("DPhase" , "CONCEPT DESIGN", "PRELIMINARY DESIGN", "DETAIL DESIGN", "AS-BUILT", "AS-INSTALLED", "REPLACEPHASE")
+	MultiValue.List ("Show")= GoExcel.CellValues("C10", "C25")
+	MultiValue.SetList("DesignLevel","", "Show", "Element", "Kit")
+	'Sheet ranges For designer And approver names
+	DBS = ("D50")
+	DBE = ("D70")
+	ARBS = ("D80")
+	ABE = ("D100")
+	
+
+		
+		
+		
+	
+	If Parameter("Show") = GoExcel.CellValue(XLpth, "Base", "C11") 
+		XLsht = GoExcel.CellValue(XLpth, "Base", "A11")
+		iProperties.Value("Custom", "Show Num")= GoExcel.CellValue(XLpth, "Base", "A11")
+		iProperties.Value("Custom", "Show Desc") = GoExcel.CellValue(XLpth, "Base", "B11")
+		MultiValue.List("Element") = GoExcel.CellValues(XLpth, XLsht, "F10", "F30")
+		'['
+	    MultiValue.List("DES_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("APR_BY") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("CHK_BY")= GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_0_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_0_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_1_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_1_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_2_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_2_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_3_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_3_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_4_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_4_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_5_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_5_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_6_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_6_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'] Set MV params
+		
+	Else If Parameter("Show") = GoExcel.CellValue(XLpth, "Base", "C12") 
+		XLsht = GoExcel.CellValue(XLpth, "Base", "A12")
+		iProperties.Value("Custom", "Show Num")= GoExcel.CellValue(XLpth, "Base", "A12")
+		iProperties.Value("Custom", "Show Desc") = GoExcel.CellValue(XLpth, "Base", "B12")
+		MultiValue.List("Element") = GoExcel.CellValues(XLpth, XLsht, "F10", "F30")	
+		'['
+	    MultiValue.List("DES_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("APR_BY") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("CHK_BY")= GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_0_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_0_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_1_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_1_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_2_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_2_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_3_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_3_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_4_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_4_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_5_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_5_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_6_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_6_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'] Set MV params
+		
+	Else If Parameter("Show") = GoExcel.CellValue(XLpth, "Base", "C13") 
+		XLsht = GoExcel.CellValue(XLpth, "Base", "A13")
+		iProperties.Value("Custom", "Show Num")= GoExcel.CellValue(XLpth, "Base", "A13")
+		iProperties.Value("Custom", "Show Desc") = GoExcel.CellValue(XLpth, "Base", "B13")
+		MultiValue.List("Element") = GoExcel.CellValues(XLpth, XLsht, "F10", "F30")
+		'['
+	    MultiValue.List("DES_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("APR_BY") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("CHK_BY")= GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_0_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_0_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_1_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_1_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_2_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_2_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_3_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_3_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_4_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_4_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_5_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_5_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_6_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_6_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'] Set MV params
+		
+		
+	Else If Parameter("Show") = GoExcel.CellValue(XLpth, "Base", "C14") 
+		XLsht = GoExcel.CellValue(XLpth, "Base", "A14")
+		iProperties.Value("Custom", "Show Num")= GoExcel.CellValue(XLpth, "Base", "A14")
+		iProperties.Value("Custom", "Show Desc") = GoExcel.CellValue(XLpth, "Base", "B14")
+		MultiValue.List("Element") = GoExcel.CellValues(XLpth, XLsht, "F10", "F30")	
+		'['
+	    MultiValue.List("DES_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("APR_BY") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("CHK_BY")= GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_0_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_0_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_1_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_1_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_2_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_2_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_3_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_3_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_4_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_4_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_5_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_5_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_6_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_6_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'] Set MV params
+		
+
+		
+	Else If Parameter("Show") = GoExcel.CellValue(XLpth, "Base", "C15") 
+		XLsht = GoExcel.CellValue(XLpth, "Base", "A15")
+		iProperties.Value("Custom", "Show Num")= GoExcel.CellValue(XLpth, "Base", "A15")
+		iProperties.Value("Custom", "Show Desc") = GoExcel.CellValue(XLpth, "Base", "B15")
+		MultiValue.List("Element") = GoExcel.CellValues(XLpth, XLsht, "F10", "F30")	
+		'['
+	    MultiValue.List("DES_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("APR_BY") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("CHK_BY")= GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_0_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_0_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_1_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_1_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_2_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_2_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_3_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_3_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_4_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_4_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_5_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_5_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_6_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_6_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'] Set MV params
+
+	Else If Parameter("Show") = GoExcel.CellValue(XLpth, "Base", "C16") 
+		XLsht = GoExcel.CellValue(XLpth, "Base", "A16")
+		iProperties.Value("Custom", "Show Num")= GoExcel.CellValue(XLpth, "Base", "A15")
+		iProperties.Value("Custom", "Show Desc") = GoExcel.CellValue(XLpth, "Base", "B15")
+		MultiValue.List("Element") = GoExcel.CellValues(XLpth, XLsht, "F10", "F30")	
+		'['
+	    MultiValue.List("DES_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("APR_BY") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("CHK_BY")= GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_0_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_0_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_1_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_1_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_2_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_2_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_3_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_3_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_4_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_4_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_5_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_5_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_6_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_6_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'] Set MV params
+		
+	Else If Parameter("Show") = GoExcel.CellValue(XLpth, "Base", "C17") 
+		XLsht = GoExcel.CellValue(XLpth, "Base", "A17")
+		iProperties.Value("Custom", "Show Num")= GoExcel.CellValue(XLpth, "Base", "A15")
+		iProperties.Value("Custom", "Show Desc") = GoExcel.CellValue(XLpth, "Base", "B15")
+		MultiValue.List("Element") = GoExcel.CellValues(XLpth, XLsht, "F10", "F30")	
+		'['
+	    MultiValue.List("DES_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("APR_BY") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("CHK_BY")= GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_0_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_0_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_1_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_1_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_2_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_2_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_3_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_3_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_4_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_4_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_5_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_5_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_6_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_6_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'] Set MV params
+
+	Else If Parameter("Show") = GoExcel.CellValue(XLpth, "Base", "C18") 
+		XLsht = GoExcel.CellValue(XLpth, "Base", "A18")
+		iProperties.Value("Custom", "Show Num")= GoExcel.CellValue(XLpth, "Base", "A15")
+		iProperties.Value("Custom", "Show Desc") = GoExcel.CellValue(XLpth, "Base", "B15")
+		MultiValue.List("Element") = GoExcel.CellValues(XLpth, XLsht, "F10", "F30")	
+		'['
+	    MultiValue.List("DES_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("APR_BY") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("CHK_BY")= GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_0_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_0_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_1_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_1_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_2_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_2_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_3_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_3_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_4_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_4_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_5_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_5_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		MultiValue.List("REV_6_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+		MultiValue.List("REV_6_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'] Set MV params
+
+
+	End If
+	
+	
+	
+	If Parameter("Element") = GoExcel.CellValue(XLpth, XLsht, "F11")
+		iProperties.Value("Custom", "Building Number") = GoExcel.CellValue(XLpth, XLsht, "D11")
+		iProperties.Value("Custom", "Project Number")= GoExcel.CellValue(XLpth, XLsht, "E11")
+		MultiValue.List("Kit") = GoExcel.CellValues(XLpth, XLsht,"I10", "I61")
+		
+	Else If Parameter("Element") = GoExcel.CellValue(XLpth, XLsht, "F12")
+		iProperties.Value("Custom", "Building Number") = GoExcel.CellValue(XLpth, XLsht, "D12")
+		iProperties.Value("Custom", "Project Number")= GoExcel.CellValue(XLpth, XLsht, "E12")
+		MultiValue.List("Kit") = GoExcel.CellValues(XLpth, XLsht,"L10", "L61")
+		
+	Else If Parameter("Element") = GoExcel.CellValue(XLpth, XLsht, "F13")
+		iProperties.Value("Custom", "Building Number") = GoExcel.CellValue(XLpth, XLsht, "D13")
+		iProperties.Value("Custom", "Project Number")= GoExcel.CellValue(XLpth, XLsht, "E13")
+		MultiValue.List("Kit") = GoExcel.CellValues(XLpth, XLsht,"O10", "O61")	
+		
+	Else If Parameter("Element") = GoExcel.CellValue(XLpth, XLsht, "F14")
+		iProperties.Value("Custom", "Building Number") = GoExcel.CellValue(XLpth, XLsht, "D14")
+		iProperties.Value("Custom", "Project Number")= GoExcel.CellValue(XLpth, XLsht, "E14")
+		MultiValue.List("Kit") = GoExcel.CellValues(XLpth, XLsht,"R10", "R61")
+	
+	Else If Parameter("Element") = GoExcel.CellValue(XLpth, XLsht, "F15")
+		iProperties.Value("Custom", "Building Number") = GoExcel.CellValue(XLpth, XLsht, "D15")
+		iProperties.Value("Custom", "Project Number")= GoExcel.CellValue(XLpth, XLsht, "E15")
+		MultiValue.List("Kit") = GoExcel.CellValues(XLpth, XLsht, "U10", "U61")
+	
+	Else If Parameter("Element") = GoExcel.CellValue(XLpth, XLsht, "F16")
+		iProperties.Value("Custom", "Building Number") = GoExcel.CellValue(XLpth, XLsht, "D16")
+		iProperties.Value("Custom", "Project Number")= GoExcel.CellValue(XLpth, XLsht, "E16")
+		MultiValue.List("Kit") = GoExcel.CellValues(XLpth, XLsht, "X10", "X61")
+	
+	Else If Parameter("Element") = GoExcel.CellValue(XLpth, XLsht, "F17")
+		iProperties.Value("Custom", "Building Number") = GoExcel.CellValue(XLpth, XLsht, "D17")
+		iProperties.Value("Custom", "Project Number")= GoExcel.CellValue(XLpth, XLsht, "E17")
+		MultiValue.List("Kit") = GoExcel.CellValues(XLpth, XLsht, "AA10", "AA61")
+		
+		Else If Parameter("Element") = GoExcel.CellValue(XLpth, XLsht, "F18")
+		iProperties.Value("Custom", "Building Number") = GoExcel.CellValue(XLpth, XLsht, "D18")
+		iProperties.Value("Custom", "Project Number")= GoExcel.CellValue(XLpth, XLsht, "E18")
+		MultiValue.List("Kit") = GoExcel.CellValues(XLpth, XLsht, "AD10", "AD61")
+		
+		Else If Parameter("Element") = GoExcel.CellValue(XLpth, XLsht, "F19")
+		iProperties.Value("Custom", "Building Number") = GoExcel.CellValue(XLpth, XLsht, "D19")
+		iProperties.Value("Custom", "Project Number")= GoExcel.CellValue(XLpth, XLsht, "E19")
+		MultiValue.List("Kit") = GoExcel.CellValues(XLpth, XLsht, "AG10", "AG61")
+		
+		Else If Parameter("Element") = GoExcel.CellValue(XLpth, XLsht, "F20")
+		iProperties.Value("Custom", "Building Number") = GoExcel.CellValue(XLpth, XLsht, "D20")
+		iProperties.Value("Custom", "Project Number")= GoExcel.CellValue(XLpth, XLsht, "E20")
+		MultiValue.List("Kit") = GoExcel.CellValues(XLpth, XLsht, "AJ10", "AJ61")
+		
+		Else If Parameter("Element") = GoExcel.CellValue(XLpth, XLsht, "F21")
+		iProperties.Value("Custom", "Building Number") = GoExcel.CellValue(XLpth, XLsht, "D21")
+		iProperties.Value("Custom", "Project Number")= GoExcel.CellValue(XLpth, XLsht, "E21")
+		MultiValue.List("Kit") = GoExcel.CellValues(XLpth, XLsht, "AM10", "AM61")
+		
+		Else If Parameter("Element") = GoExcel.CellValue(XLpth, XLsht, "F22")
+		iProperties.Value("Custom", "Building Number") = GoExcel.CellValue(XLpth, XLsht, "D22")
+		iProperties.Value("Custom", "Project Number")= GoExcel.CellValue(XLpth, XLsht, "E22")
+		MultiValue.List("Kit") = GoExcel.CellValues(XLpth, XLsht, "AP10", "AP61")
+		
+	Else If Parameter("Element") = GoExcel.CellValue(XLpth, XLsht, "F29")
+		iProperties.Value("Custom", "Building Number") = GoExcel.CellValue(XLpth, XLsht, "D29")
+		iProperties.Value("Custom", "Project Number")= GoExcel.CellValue(XLpth, XLsht, "E29")
+		MultiValue.List("Kit") = GoExcel.CellValues(XLpth, XLsht,"BK10", "BK61")
+		
+	Else If Parameter("Element") = GoExcel.CellValue(XLpth, XLsht, "F30")
+		iProperties.Value("Custom", "Building Number") = GoExcel.CellValue(XLpth, XLsht, "D30")
+		iProperties.Value("Custom", "Project Number")= GoExcel.CellValue(XLpth, XLsht, "E30")
+		MultiValue.List("Kit") = GoExcel.CellValues(XLpth, XLsht,"BN10", "BN61")
+	
+	
+	
+	
+	
+	End If
+
+	iProperties.Value("Project", "Vendor") = "TAIT"
+	
+	
+	GoExcel.Close()
+	
+	
+End Sub
+
+'	Public Sub DDUpdate()
+'		'Sheet ranges for designer and approver names
+'	DBS = ("D50")
+'	DBE = ("D70")
+'	ARBS = ("D80")
+'	ABE = ("D100")
+'		MultiValue.List("Element") = GoExcel.CellValues(XLpth, XLsht, "F10", "F30")
+'		MultiValue.List("DES_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+'		MultiValue.List("APR_BY") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'		MultiValue.List("CHK_BY")= GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'		MultiValue.List("REV_0_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+'		MultiValue.List("REV_0_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'		MultiValue.List("REV_1_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+'		MultiValue.List("REV_1_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'		MultiValue.List("REV_2_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+'		MultiValue.List("REV_2_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'		MultiValue.List("REV_3_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+'		MultiValue.List("REV_3_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'		MultiValue.List("REV_4_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+'		MultiValue.List("REV_4_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+'		MultiValue.List("REV_5_BY") = GoExcel.CellValues(XLpth, XLsht, DBS, DBE)
+'		MultiValue.List("REV_5_APR") = GoExcel.CellValues(XLpth, XLsht, ARBS, ABE)
+		
+'	End Sub
+		

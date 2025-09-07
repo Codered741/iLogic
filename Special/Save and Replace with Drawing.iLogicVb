@@ -1,0 +1,71 @@
+﻿Dim oDrawingType As String = ".dwg"
+Dim oDoc As Document = ThisApplication.ActiveDocument
+Dim oSelected As ObjectCollection = ThisApplication.TransientObjects.CreateObjectCollection
+
+'CHECK THAT A COMPONENT IS SELECTED----------------------
+If oDoc.SelectSet.Count = 0 Then
+    MessageBox.Show("A component must first be selected to run the operation.", "Invalid selection.",MessageBoxButtons.OK,MessageBoxIcon.Error)
+    Exit Sub
+End If
+
+'CHECK THAT ONLY ONE COMPONENT IS SELECTED-----------------------
+If oDoc.SelectSet.Count > 1 Then
+    MessageBox.Show("Only one component can be selected at a time.", "Invalid selection.",MessageBoxButtons.OK,MessageBoxIcon.Error)
+    Exit Sub
+End If
+
+'ADD TO OBJECT COLLECTION-----------------------------------------
+For i = 1 To oDoc.SelectSet.Count
+    If TypeOf oDoc.SelectSet.Item(i) Is ComponentOccurrence Then
+        oSelected.Add (oDoc.SelectSet.Item(i))
+    End If
+Next
+
+'CAPTURE OLD FILE INFORMATION---------------------------------------
+oOldDoc = oSelected.Item(1).Definition.Document
+Dim oOldComp As String = oOldDoc.FullFileName
+Dim oOldIDW As String = System.IO.Path.ChangeExtension(oOldComp, oDrawingType)
+
+'RUN Save&Replace COMMAND-------------------------------------------
+ThisApplication.CommandManager.ControlDefinitions.Item("AssemblyBonusTools_SaveAndReplaceComponentCmd").Execute
+
+'CAPTURE NEW FILE INFORMATION----------------------------------------
+oNewDoc = oSelected.Item(1).Definition.Document
+Dim oNewComp As String = oNewDoc.FullFileName
+Dim oNewIDW As String = System.IO.Path.ChangeExtension(oNewComp, oDrawingType)
+
+'EXIT IF Save&Replace WAS CANCELLED-------------------------------------
+If oOldComp = oNewComp Then
+	Return
+End If
+
+''---DEACTIVATE VAULT---
+'Dim oVault As ApplicationAddIn
+'For Each oVault In ThisApplication.ApplicationAddIns
+'	If oVault.DisplayName = "Inventor Vault" Then Exit For
+'Next
+'If oVault IsNot Nothing Then oVault.Deactivate
+
+'SAVE A COPY OF THE OLD DRAWING-----------------------------------------
+If System.IO.File.Exists(oOldIDW) Then
+Dim DrawingDoc As DrawingDocument = ThisApplication.Documents.Open(oOldIDW)
+DrawingDoc.SaveAsInventorDWG(oNewIDW, True)
+DrawingDoc.Close(True)
+
+'REPLACE REFERENCE-------------------------------------------------------
+Dim NewDoc = ThisApplication.Documents.Open(oNewIDW)
+Dim oFD As FileDescriptor = NewDoc.ReferencedFileDescriptors(1).DocumentDescriptor.ReferencedFileDescriptor
+oFD.ReplaceReference(oNewComp)
+NewDoc.Update()
+NewDoc.Save
+
+
+'REACTIVATE ASSEMBLY & VAULT--------------------------------------------------------
+oDoc.Activate()
+'oVault.Activate
+
+Else
+	MessageBox.Show("Component has been replaced but the drawing file was not found.", "Missing " & oDrawingType,MessageBoxButtons.OK,MessageBoxIcon.Information)
+End If
+
+SendKeys.SendWait("{ESC}")

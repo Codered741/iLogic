@@ -1,0 +1,406 @@
+'TODO
+'Add Vault GET for current assembly
+'Add File version check.  (as reference to external rule)
+
+Imports System.IO
+Imports System.IO.File
+Imports System.Text
+'Imports System.IO.Path
+'Imports System.Collections
+Imports My.Computer.FileSystem
+
+
+'Type queueType = Type.GetTypeFromProgID("PDFCreator.JobQueue")
+'Activator.CreateInstance(queueType)
+
+AddReference "C:\Program Files\PDFCreator\PDFCreator.ComWrapper.dll"
+Imports pdfforge.PDFCreator.UI.ComWrapper
+
+Sub Main()
+'get user confirmation on items before starting
+'this will take a while
+	Dim usrTimeAck = MessageBox.Show("This rule will find all drawings of parts referenced in the BOM, print them to PDF's and merge them to a single document.  "  _
+		& vbLf & "This process can take some time to run, and cannot be stopped once started.  ", "Time Warning", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning)
+		
+	If usrTimeAck = vbCancel Then
+		Exit Sub
+	End If
+	
+	'deactivate the Vault Addin to reduce the number of prompts.
+	Dim VaultAddin As Inventor.ApplicationAddIn = ThisApplication.ApplicationAddIns.ItemById("{48B682BC-42E6-4953-84C5-3D253B52E77B}")
+	VaultAddin.Deactivate()
+	
+	'confirm getting latest drawings
+	Dim usrLatestAck = MessageBox.Show("Would you like to get the latest drawings from Vault? " _ 
+		& vbLf & "This can take some time with larger assemblies.  ", "Latest Drawing Warning", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning)
+		
+	If usrLatestAck = vbCancel Then	
+		Exit Sub
+	Else If usrLatestAck = vbYes Then
+		iLogicVB.RunExternalRule("Get Latest from Vault.iLogicVB")
+
+		'Error checking is not yet supported
+		' If SharedVariable("VaultGetFail") = True Then
+			' MessageBox.Show("There was an error getting files from Vault.  Please try again.  ", "Get latest from Vault Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+			' Exit Sub
+		' End If
+
+	End If
+
+	'confirm comparing the part and drawing versions to be ready for posting
+	Dim usrDwgCompareAck = MessageBox.Show("Would you like to check to see if the drawings are up to date?", "Drawing Version Check", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+	
+	If usrDwgCompareAck = vbYes Then
+		SharedVariable("BatchPlotInvoke") = True
+		iLogicVB.RunExternalRule("Check Drawing Update Status.iLogicVB")
+		SharedVariable("BatchPlotInvoke") = False
+	End If
+	
+	Dim usrCompareContinueAck = MessageBox.Show("Do you wish to continue plotting drawings?", "Continue batch plot?", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+	
+	If usrCompareContinueAck = vbNo Then 
+		MsgBox("Run the 'Check Drawing Update Status' rule to update any drawings that are out of date.  ")
+		VaultAddin.Activate
+		Return
+	End If
+	
+	Dim oDoc as Document = ThisApplication.ActiveDocument
+	Dim FileNameMinLong as Integer = 21 'c:/_vaultWIP/Designs/ is 21 characters. 
+		
+	'begin the Batch Plot process
+	Try 
+		'check if active document is an assembly
+		If isAsm(oDoc) = False
+			MsgBox("Please run from an Assembly")
+			VaultAddin.Activate
+			Return
+		End If
+		
+		'write to iLogic Log
+		SharedVariable("LogVar") = "Batch Plot to PDFCreator" 
+		iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+		
+		'Start Stream output, user name and date stamp
+		' If Not noWrite = True Then
+			' oAppend.WriteLine("/////////////////////BATCH EXPORT PDF/////////////////////")
+			' oAppend.WriteLine(ThisApplication.UserName & "," & DateTime.Now.ToString("G") & "," & oDoc.FullFileName)
+		' End If
+		
+		Dim lstDrawings as New List(of String)
+		
+		Dim BOMDocs As New List(of String)
+	
+		'get list of part numbers from Structured BOM
+		GetDocsFromBOM(ThisApplication.ActiveDocument, BOMDocs)
+		
+		
+		 Dim oProgressBar as Inventor.ProgressBar
+		' Dim DocCount = oRefDocs.Count
+		 oProgressBar = ThisApplication.CreateProgressBar(False, BOMDocs.Count, "Finding Drawings...")
+
+		'Attempt to find a drawing file of the same name as the assembly doc
+		RefDwgFullFileName = FindDrawingFilePN(oDoc)
+		
+		oProgressBar.Message = "Checking for drawing of " & oDoc.FullFileName
+		oProgressBar.UpdateProgress
+		
+		If RefDwgFullFileName.Length > FileNameMinLong Then 
+		
+			lstDrawings.Add(RefDwgFullFileName)
+			
+		End If
+		
+		
+		'Dim bDoc as Document
+		For Each BOMDoc as String In BOMDocs
+			bDoc = ThisApplication.Documents.ItemByName(BOMDoc) 'convert full file name to document object
+			
+			oProgressBar.Message = "Checking for drawing of " & BOMDoc 'oRefDoc.FullFileName
+			oProgressBar.UpdateProgress
+
+			'Attempt to find a drawing file of the same name as the model doc
+			RefDwgFullFileName = FindDrawingFilePN(bDoc)
+			' oAppend.Write(BOMDoc & ",")
+			If RefDwgFullFileName.Length > FileNameMinLong Then 
+			
+				lstDrawings.Add(RefDwgFullFileName)
+				' oAppend.WriteLine(RefDwgFullFileName)
+				
+			' Else 
+				
+				' oAppend.WriteLine("NO DRAWING FOUND")
+				
+			End If
+			
+		Next
+		
+		oProgressBar.Close		
+
+		MergePrintDwgs(oDoc.FullFileName, lstDrawings)
+		
+		CopyPostInfo(oDoc)
+		
+		
+		
+	Catch Ex as Exception
+	
+		MsgBox("Main error: " & Ex.Message)
+		
+	Finally 
+	
+		VaultAddin.Activate
+		
+	End Try
+	
+	Try	
+		If oDoc.PropertySets.Item("Inventor User Defined Properties").Item("exportPath").Value <> "" Then
+			If MessageBox.Show("Would you like to copy the PDF to the showfile location?", "Showfile Copy", MessageBoxButtons.YesNo) = vbYes Then
+				
+				My.Computer.FileSystem.CopyFile(DocumentFileName(oDoc.FullFileName)& ".pdf", oDoc.PropertySets.Item("Inventor User Defined Properties").Item("exportPath").Value & oDoc.PropertySets.Item("Design Tracking Properties").Item("Part Number").Value & "-" & oDoc.PropertySets.Item("Design Tracking Properties").Item("Description").Value & " R" & oDoc.PropertySets.Item("Inventor Summary Information").Item("Revision Number").Value & " " & Now.ToString("yyyyMMddTHHmm") & " UNCONTROLLED.pdf", Microsoft.VisualBasic.FileIO.UIOption.AllDialogs, Microsoft.VisualBasic.FileIO.UICancelOption.DoNothing)
+				
+			End If
+		End If		
+	Catch
+	
+		msgbox("property missing")
+		
+	End Try
+	
+End Sub 'Main
+
+
+Sub CopyPostInfo(doc as Document)
+	Dim FinalText as String 
+	Dim desPropSet as PropertySet = Doc.PropertySets.Item("Design Tracking Properties")
+	FinalText = "Job Number: " & DesPropSet.Item("Part Number").Value & vbLf & _
+					"Kit Name: " & DesPropSet.Item("Description").Value & vbLf & _
+					"Project Name: " & DesPropSet.Item("Project").Value & vbLf & _
+					":black_circle:"
+	My.Computer.Clipboard.SetText(FinalText)
+End Sub 'CopyPostInfo
+
+Private Sub MergePrintDwgs(strFilePath as String, lstDwgsPrint as List(of String))
+	
+	Dim PDFCreatorQueue As Queue = New Queue
+	Dim job As Object
+	Dim fullPath As String
+
+	Dim oProgressBar As Inventor.ProgressBar = ThisApplication.CreateProgressBar(False, lstDwgsPrint.Count, "Printing Drawings...")
+
+	Try
+
+		fullPath = DocumentFileName(strFilePath) 'Path.Combine(Path.GetTempPath, Path.GetTempFileName)
+		
+		'MsgBox("Initializing PDFCreator queue...")
+		'PDFCreatorQueue.ReleaseCom()
+		PDFCreatorQueue.Initialize()
+		
+		'setup options for open
+		Dim oOptions as NameValueMap = ThisApplication.TransientObjects.CreateNameValueMap
+		oOptions.Value("DeferUpdates") = True
+		oOptions.Value("FastOpen") = True
+		
+		'MsgBox("Printing windows test page...")
+		For Each DwgName as String In lstDwgsPrint
+		
+			oProgressBar.Message = "Printing drawing file: " & DwgName
+			oProgressBar.UpdateProgress
+			ThisApplication.Documents.OpenWithOptions(DwgName, oOptions, True)
+			DwgPrint("PDFCreator")
+			ThisApplication.ActiveDocument.Close(True)
+			
+		Next
+
+		If Not PDFCreatorQueue.WaitForJobs(lstDwgsPrint.Count, lstDwgsPrint.Count * 5) Then
+			MsgBox("The print job did not reach the queue within the allotted time.  ")
+		Else
+		
+			PDFCreatorQueue.MergeAllJobs
+			'MsgBox("Currently there are " & PDFCreatorQueue.Count & " job(s) in the queue")
+			'MsgBox("Getting job instance")
+			job = PDFCreatorQueue.NextJob
+
+			job.SetProfileByGuid("DefaultGuid")
+			
+			If System.IO.File.Exists(fullPath & ".pdf") Then'If document exists, prompt user to overwrite
+				MessageBox.Show("A File already exists with this name, and will be overwritten!", "Batch Plot", MessageBoxButtons.OK, MessageBoxIcon.Information)
+				System.IO.File.Delete(fullPath & ".pdf")
+				'msgbox("deleted")
+			End If
+			
+			'MsgBox("Converting under ""DefaultGuid"" conversion profile")
+			job.ConvertTo(fullPath)
+
+			If (Not job.IsFinished Or Not job.IsSuccessful) Then
+				MsgBox("Could not convert the file: " & fullPath)
+			Else
+				'MsgBox("Job finished successfully")
+			End If
+		End If
+		
+	Catch Ex As Exception
+	
+		MessageBox.Show("MergePrintDwgs Error: " & Ex.Message)
+		
+	Finally
+	
+		'MsgBox("Releasing the queue object")
+		PDFCreatorQueue.ReleaseCom()
+		oProgressBar.Close
+		
+	End Try
+	Process.Start("explorer.exe", "/select," & fullPath & ".pdf")
+	'ThisDoc.Launch(fullPath & ".pdf")
+	
+End Sub
+
+Sub GetDocsFromBOM(oDoc as Document, ByRef BOMDocs as List(of String))
+	
+	If oDoc.DocumentType <> kAssemblyDocumentObject Then
+		MsgBox("This rule can only be run from an assembly")
+		Exit Sub
+	End If
+	
+	Dim oCompDef as AssemblyComponentDefinition = oDoc.ComponentDefinition
+	Dim oDocBOM As BOM = oCompDef.BOM
+
+	oDocBOM.StructuredViewEnabled = True
+	oDocBOM.StructuredViewFirstLevelOnly = False
+	oDocBOM.PartsOnlyViewEnabled = False
+	
+	Dim oBOMView as BOMView = oDocBOM.BOMViews.Item("Structured")	
+	Dim oBOMRows As BOMRowsEnumerator = oBOMView.BOMRows
+	'Dim oCompDef As ComponentDefinition
+	'Dim oPNProp as Inventor.Property
+	
+	For Each oRow as BOMRow in oBOMRows
+		
+			GetBOMRowDocFile(oRow, BOMDocs)
+		
+	Next 
+	
+	'BOMDocs.Sort()
+	
+End Sub
+
+Sub GetBOMRowDocFile(oRow as BOMRow, ByRef BOMDocs as List(of String))
+	
+	Dim oCompDef As ComponentDefinition
+	
+	'Add the part number of the current row, for parts that have children
+	oCompDef = oRow.ComponentDefinitions.Item(1)
+	
+	If oCompDef.Type = 100675072 Then 'exclude Virtual Components
+		'do nothing
+	Else
+
+		DocName = oCompDef.Document.FullFileName
+
+		If Not BOMDocs.Contains(DocName) Then
+			BOMDocs.Add(DocName)
+		End If
+		
+	End If
+		
+	If Not oRow.ChildRows Is Nothing Then
+	
+		If Not BOMDocs.Contains(DocName) Then
+			BOMDocs.Add(DocName)
+		End If
+	
+		For Each oChildRow as BOMRow in oRow.ChildRows		
+			GetBOMRowDocFile(oChildRow, BOMDocs)
+		Next
+		
+	End If
+	
+End Sub
+
+Function FindDrawingFilePN(PartOrAssemblyDoc As Document) As String
+    Dim fullFilenamePN As String
+    fullFilenamePN = PartOrAssemblyDoc.fullFilename
+   
+    ' Extract the path from the full filename.
+    Dim path As String = ThisApplication.DesignProjectManager.ActiveDesignProject.WorkspacePath
+    'path = Left$(fullFilenamePN, InStrRev(fullFilenamePN, "\"))
+
+	Dim iProps as PropertySet = PartOrAssemblyDoc.PropertySets.Item("Design Tracking Properties")
+	Dim pn = iProps.Item("Part Number")
+	
+    Dim filename As String = pn.Value
+
+    ' Find if the drawing exists.
+    Dim drawingFilename As String
+    drawingFilename = ThisApplication.DesignProjectManager.ResolveFile(path, filename & ".dwg")
+   
+    ' Check the result.
+    If drawingFilename = "" Then
+       
+        ' Find if the drawing exists.
+        drawingFilename = ThisApplication.DesignProjectManager.ResolveFile(path, filename & ".idw")
+   
+        ' Return the result.
+        If drawingFilename <> "" Then
+            Return drawingFilename
+        Else
+            Return ""
+        End If
+    Else
+        ' Return the result.
+         Return drawingFilename
+    End If
+End Function 'FindDrawingFilePNN
+
+Private Sub DwgPrint(PrinterName as String)
+	Dim oPrintMgr As DrawingPrintManager = ThisApplication.ActiveDocument.PrintManager
+	' Get the name of the printer that will be used.
+	oPrintMgr.Printer = PrinterName
+	
+	' Set to print in color.
+	oPrintMgr.ColorMode = 13313 'kPrintColorPalette
+	
+	' Set to print one copies.
+	oPrintMgr.NumberOfCopies = 1
+	
+	' Set to print using landscape orientation.
+	oPrintMgr.Orientation = 13570
+		'13570 'kLandscapeOrientation
+		'13569 'kPortraitOrientation
+	
+	' Set the paper size.
+	oPrintMgr.PaperSize = PaperSizeEnum.kPaperSizeA3
+		'14338 'kPaperSize11x17
+		
+	'oPrintMgr.PaperWidth = 431.8
+	'oPrintMgr.PaperHeight = 27.94
+	
+	' Set to print all sheets.
+	oPrintMgr.PrintRange = 14082 'kPrintAllSheets
+	
+	' Set to print best fit scale
+	oPrintMgr.ScaleMode = PrintScaleModeEnum.kPrintBestFitScale
+	
+	' Submit the print.
+	oPrintMgr.SubmitPrint
+End Sub 'DwgPrint
+
+Private Sub printTestFile()
+	Dim ShellObj As Object
+
+	ShellObj = CreateObject("Shell.Application")
+	ShellObj.ShellExecute("RUNDLL32.exe", "PRINTUI.DLL,PrintUIEntry /k /n ""PDFCreator""", "", "open", 1)
+End Sub
+
+Function DocumentFileName(Doc As String) As String
+	DocumentFileName = Left(Doc, Doc.Length - 4)
+	'MsgBox(DocumentFileName)
+End Function 'DocumentFileName
+
+Function isAsm(ThisDoc As Document) As Boolean
+	Debug.Print (ThisDoc.DocumentType)
+	If ThisDoc.DocumentType = kAssemblyDocumentObject Then
+		isAsm = True
+	Else
+		isAsm = False
+	End If
+End Function 'isAsm
