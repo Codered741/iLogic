@@ -1,13 +1,25 @@
-AddReference "C:\Program Files\Autodesk\AutoCAD 2017\Autodesk.AutoCAD.Interop.dll"
-AddReference "C:\Program Files\Autodesk\AutoCAD 2017\Autodesk.AutoCAD.Interop.Common.dll"
+﻿'AUTHOR: Cody Redding
+'CONTACT: codered741@gmail.com
+
+AddReference "C:\Program Files\Autodesk\AutoCAD 2024\Autodesk.AutoCAD.Interop.dll"
+AddReference "C:\Program Files\Autodesk\AutoCAD 2024\Autodesk.AutoCAD.Interop.Common.dll"
 
 Imports System.IO
 Imports Autodesk.AutoCAD.Interop
 Imports Autodesk.AutoCAD.Interop.Common
 Imports System.Windows.Forms
+Imports System.Text
 
 Sub Main()
-
+	
+	'read in the path to the templates and test that it Exists
+	dim strTemplatesPath as String = getTemplatesFolderPath()
+	'messagebox.show(strTemplatesPath)
+	If strTemplatesPath.Length = 0 Then
+		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		Exit sub
+	End if
+	
 	On Error Resume Next
 	
 	'Write rule name to log for tracking
@@ -33,11 +45,11 @@ Sub Main()
 	End If
 	
 	'get/open an instance of AutoCAD
-	Dim oAcadApp as AcadApplication = GetObject(, "AutoCAD.Application")
+	Dim oAcadApp As AcadApplication = GetObject("AutoCAD.Application.24")
 	If Err.Number  > 0 Then
 		Err.Clear
 		'MsgBox("Could not get ACAD, launching.  ")
-		oAcadApp = CreateObject("AutoCAD.Application")
+		oAcadApp = CreateObject("AutoCAD.Application.24")
 		If Err.Number > 0 Then
 			MsgBox("Error launching AutoCAD.  ")
 			Exit Sub
@@ -202,7 +214,7 @@ Sub ExportDWG(oDocument as Document, FileName as String)
     If DWGAddIn.HasSaveCopyAsOptions(oDocument, oContext, oOptions) Then
 
         Dim strIniFile As String
-        strIniFile = "C:\_vaultWIP\Designs\Templates\Library\iLogic\DWG_Export.ini"
+        strIniFile = strTemplatesPath + "Library\iLogic\DWG_Export.ini"
         ' Create the name-value that specifies the ini file to use.
         oOptions.Value("Export_Acad_IniFile") = strIniFile
     End If
@@ -213,3 +225,23 @@ Sub ExportDWG(oDocument as Document, FileName as String)
     'Publish document.
     Call DWGAddIn.SaveCopyAs(oDocument, oContext, oOptions, oDataMedium)
 End Sub
+
+Function getTemplatesFolderPath () as string
+	
+	Dim invTempLoc as String = "C:\_vaultWIP\inv_Templates_Path.txt"
+	
+	If System.IO.File.Exists(invTempLoc)
+		Dim oRead as new StreamReader(invTempLoc)
+	
+		Try 
+			return oRead.ReadLine()
+		Catch
+			return 0
+		End Try
+		
+	Else
+		'MessageBox.Show("The template path reference could not be found. ","File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		return 0
+	End if
+	
+End Function

@@ -5,108 +5,134 @@ Imports Inventor.DimensionTypeEnum
 Imports Inventor.DrawingCurveSegmentEnum
 Imports Inventor.DrawingCurveEnum
 Imports Inventor.CurveTypeEnum
-
+Imports System.IO
+Imports System.Text
 
 Sub Main()
-
+	
+	'write to iLogic Log
+	SharedVariable("LogVar") = "AutoDraw" 
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+		
 	'Ask to Create Drawing
 	AskCreateDrawing = vbYes 'MessageBox.Show("Would you like to Create Drawings for the Current Model?", "Drawing Automation",MessageBoxButtons.YesNo)
 	
 	'If the User Presses YES
 	If AskCreateDrawing = vbYes Then 'AndAlso iProperties.Value("Custom", "HasDwg") = False Then
 		
-		iProperties.Value("Custom", "HasDwg") = True
-		iProperties.Value("Custom", "DETAILER") = ThisApplication.UserName
-		iProperties.Value("Project", "Creation Date") = DateString
-		
-		Dim uTemp as String
-		Dim Template as String
-		Dim TemplateList as New List(of String)
-		TemplateList.Add("TAIT")
-		TemplateList.Add("HKDL CSS")
-		TemplateList.Add("Universal SM Japan")
-		TemplateList.Add("Universal SM Hollywood")
-		TemplateList.Add("Universal SM Florida")
-		
-		'Prompt user to select template
-		uTemp = InputListBox("Please select the template you would like to use: ", TemplateList, TemplateList(0), Title:= "Select Template", ListName := "Available Templates")
-		
-		'Cancel on user command
-		' If uTemp = vbCancel Then
-			' Exit Sub
-		' End If
-		
-		'select template based on user input - ADD TEMPLATES HERE!!!!!!
-		Select Case uTemp
-			Case  TemplateList(0)
-				Template = "C:\_vaultWIP\Designs\Templates\TT_Part.dwg"
-			Case TemplateList(1)
-				Template = "C:\_vaultWIP\Designs\Templates\Disney\HKDL CSS Part Template.dwg"
-			Case TemplateList(2)
-				Template = "C:\_vaultWIP\Designs\Templates\Universal\US_JAPAN\_USJ_STANDARD TEMPLATE_SIZE B_11x17.dwg"
-			Case TemplateList(3)
-				Template = "C:\_vaultWIP\Designs\Templates\Universal\US_HOLLYWOOD\_USH_STANDARD TEMPLATE_SIZE B_11x17.dwg"
-			Case TemplateList(4)
-				Template = "C:\_vaultWIP\Designs\Templates\Universal\US_FLORIDA\_USF_STANDARD TEMPLATE_SIZE B_11x17.dwg"
-		End Select
-
-		'prompt user to auto scale
-		Dim uScale As Boolean = True
-		uScale = InputRadioBox("Auto Scale?", "Yes", "No", uScale, Title := "Scale")
+		Try
+			'read in the path to the templates and test that it Exists
+			dim strTemplatesPath as String = getTemplatesFolderPath()
+			'messagebox.show(strTemplatesPath)
+			If strTemplatesPath.Length = 0 Then
+				MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+				Exit sub
+			End if
+				
+			iProperties.Value("Custom", "HasDwg") = True
+			iProperties.Value("Custom", "DETAILER") = ThisApplication.UserName
+			iProperties.Value("Project", "Creation Date") = DateString
 			
-		'Set the View Scales
-		Dim DrawingViewScale 'As Double
-		
-		If uScale = True Then
-			DrawingViewScale = 4/iProperties.Value("Custom", "LENGTH")
-		Else 
-		viewScale:
-			DrawingViewScale = InputBox("Enter Scale", "Scale", "1")
-			If Not Double.TryParse(DrawingViewScale, 1.1) Then 'ShowNumber.Length = 6 Then
-				MsgBox("The scale value must be a decimal number (double), like 0.15 .  ")
-				Goto viewScale
+			
+			Dim uTemp as String
+			Dim Template as String
+			Dim TemplateList as New List(of String)
+			TemplateList.Add("TAIT")
+			TemplateList.Add("HKDL CSS")
+			TemplateList.Add("Universal SM Japan")
+			TemplateList.Add("Universal SM Hollywood")
+			TemplateList.Add("Universal SM Florida")
+			TemplateList.Add("TAIT UK")
+			
+			'Prompt user to select template
+			uTemp = InputListBox("Please select the template you would like to use: ", TemplateList, TemplateList(0), Title:= "Select Template", ListName := "Available Templates")
+			
+			'Cancel on user command
+			'removed because InputListBox does not have a cancel button
+			' If uTemp = vbCancel Then
+				' Exit Sub
+			' End If
+			
+			'select template based on user input - ADD TEMPLATES HERE!!!!!!
+			Select Case uTemp
+				Case  TemplateList(0)
+					Template = strTemplatesPath + "TT_Part.dwg"
+				Case TemplateList(1)
+					Template = strTemplatesPath + "Disney\HKDL CSS Part Template.dwg"
+				Case TemplateList(2)
+					Template = strTemplatesPath + "Universal\US_JAPAN\_USJ_STANDARD TEMPLATE_SIZE B_11x17.dwg"
+				Case TemplateList(3)
+					Template = strTemplatesPath + "Universal\US_HOLLYWOOD\_USH_STANDARD TEMPLATE_SIZE B_11x17.dwg"
+				Case TemplateList(4)
+					Template = strTemplatesPath + "Universal\US_FLORIDA\_USF_STANDARD TEMPLATE_SIZE B_11x17.dwg"
+				Case TemplateList(5)
+					Template = strTemplatesPath + "Metric\UK TEST BORDER.dwg"
+			End Select
+
+			'prompt user to auto scale
+			Dim uScale As Boolean = True
+			uScale = InputRadioBox("Auto Scale?", "Yes", "No", uScale, Title := "Scale")
+				
+			'Set the View Scales
+			Dim DrawingViewScale 'As Double
+			
+			If uScale = True Then
+				DrawingViewScale = 4/iProperties.Value("Custom", "LENGTH")
+			Else 
+			viewScale:
+				DrawingViewScale = InputBox("Enter Scale", "Scale", "1")
+				If DrawingViewScale = vbCancel Then	
+					Exit sub
+				End if
+				
+				If Not Double.TryParse(DrawingViewScale, 1.1) Then 'ShowNumber.Length = 6 Then
+					MsgBox("The scale value must be a decimal number (double), like 0.15 .  ")
+					Goto viewScale
+				End If
 			End If
-		End If
-		
-		Dim ModelDocName As String 
-		ModelDocName = ThisDoc.FileName(False) 'without extension
-		
-		ModelDwgDoc = CreateDrawing_PlaceViews(ModelDocName, DrawingViewScale, Template, "Top_Right_Project", oBaseView, oRightSideView, oProjectView, oView4)
-		Dim oBW as Double
-		Dim oBH As Double
-		oBW = oBaseView.Width
-		oBH = oBaseView.Height
-		'MsgBox(oBW & " x " & oBH)
-		
-		
-		
-		'CreateOverallDimension (ModelDwgDoc, oBaseView, YDIM, "Vertical", 0.75, "Left", False)
-
-		' ChuteTop = FindCurve (Assem_DrawingDoc, oBaseView, oBW, "Horizontal", "Top")
-		' MsgBox("1")
-		' FlangeEdge = FindCurve (Assem_DrawingDoc, oBaseView, oBH, "Vertical", "Right")
-		' CreateOverallDimension(ModelDrawingDoc, "Vertical", "Right", ChuteTop, "Top", FlangeEdge, "Right", 0.5)
-		
-		'CreateLinearDimension (ModelDwgDoc, oBaseView, YDIM, "Vertical", 0.75, "Left", False)
-
-		'CreateLinearDimension (ModelDwgDoc, oBaseView, iProperties.Value("Custom", "WIDTH"), "Horizontal", -0.75, "Bottom", True)
-		
-		'CreateLinearDimension (ModelDwgDoc, oRightSideView, iProperties.Value("Custom", "THICKNESS"), "Horizontal", 0.75, "Left", True)
-		
-		
-		'Save As oDrawingDoc (Path and File Name)
-		oPartPath = ThisDoc.Path
-		oPartPathLength = Len(oPartPath)
-		oDrawingPath = Left(oPartPath, oPartPathLength)
-		
-		oDrawingDoc = oDrawingPath & "\" & ModelDocName & ".dwg" 
 			
-		ModelDwgDoc.SaveAs(oDrawingDoc, False)
-		'Close the Template Drawing
-		ModelDwgDoc.Close(True)
-		'Open the Newly Saved Drawing
-		DrawingDoc = ThisApplication.Documents.Open(oDrawingDoc, True)
-		
+			Dim ModelDocName As String 
+			ModelDocName = ThisDoc.FileName(False) 'without extension
+			
+			ModelDwgDoc = CreateDrawing_PlaceViews(ModelDocName, DrawingViewScale, Template, "Top_Right_Project", oBaseView, oRightSideView, oProjectView, oView4)
+			Dim oBW as Double
+			Dim oBH As Double
+			oBW = oBaseView.Width
+			oBH = oBaseView.Height
+			'MsgBox(oBW & " x " & oBH)
+			
+			
+			
+			'CreateOverallDimension (ModelDwgDoc, oBaseView, YDIM, "Vertical", 0.75, "Left", False)
+
+			' ChuteTop = FindCurve (Assem_DrawingDoc, oBaseView, oBW, "Horizontal", "Top")
+			' MsgBox("1")
+			' FlangeEdge = FindCurve (Assem_DrawingDoc, oBaseView, oBH, "Vertical", "Right")
+			' CreateOverallDimension(ModelDrawingDoc, "Vertical", "Right", ChuteTop, "Top", FlangeEdge, "Right", 0.5)
+			
+			'CreateLinearDimension (ModelDwgDoc, oBaseView, YDIM, "Vertical", 0.75, "Left", False)
+
+			'CreateLinearDimension (ModelDwgDoc, oBaseView, iProperties.Value("Custom", "WIDTH"), "Horizontal", -0.75, "Bottom", True)
+			
+			'CreateLinearDimension (ModelDwgDoc, oRightSideView, iProperties.Value("Custom", "THICKNESS"), "Horizontal", 0.75, "Left", True)
+			
+			
+			'Save As oDrawingDoc (Path and File Name)
+			oPartPath = ThisDoc.Path
+			oPartPathLength = Len(oPartPath)
+			oDrawingPath = Left(oPartPath, oPartPathLength)
+			
+			oDrawingDoc = oDrawingPath & "\" & ModelDocName & ".dwg" 
+				
+			ModelDwgDoc.SaveAs(oDrawingDoc, False)
+			'Close the Template Drawing
+			ModelDwgDoc.Close(True)
+			'Open the Newly Saved Drawing
+			DrawingDoc = ThisApplication.Documents.Open(oDrawingDoc, True)
+		Catch
+			MessageBox.Show("An error has occured.  Please try again", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+			Exit sub
+		End try	
 	End If
 
 End Sub
@@ -1254,3 +1280,23 @@ Sub CreateAngularDimension(oDrawingDoc As DrawingDocument, CurveMin As DrawingCu
 
 
 End Sub
+
+Function getTemplatesFolderPath () as string
+	
+	Dim invTempLoc as String = "C:\_vaultWIP\inv_Templates_Path.txt"
+	
+	If System.IO.File.Exists(invTempLoc)
+		Dim oRead as new StreamReader(invTempLoc)
+	
+		Try 
+			return oRead.ReadLine()
+		Catch
+			return 0
+		End Try
+		
+	Else
+		'MessageBox.Show("The template path reference could not be found. ","File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		return 0
+	End if
+	
+End Function

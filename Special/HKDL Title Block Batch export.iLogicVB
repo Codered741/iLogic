@@ -1,8 +1,12 @@
+'AUTHOR: Cody Redding
+'CONTACT: codered741@gmail.com
+
 	'Purpose: Execute title block swap on all drawings that are needed for each park of the SMLYDKMK Project
 
 Imports System.IO
 Imports System.IO.File
 Imports System.IO.Path
+Imports System.Text	
 'Imports System.Collections
 Imports System.Windows.Forms
 Imports My.Computer.FileSystem
@@ -11,8 +15,16 @@ AddReference "C:\Program Files\PDFCreator\PDFCreator.ComWrapper.dll"
 Imports pdfforge.PDFCreator.UI.ComWrapper
 	
 Sub Main()
-
+	
 	On Error GoTo errhandle
+	
+	'read in the path to the templates and test that it Exists
+	dim strTemplatesPath as String = getTemplatesFolderPath()
+	'messagebox.show(strTemplatesPath)
+	If strTemplatesPath.Length = 0 Then
+		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		Exit sub
+	End if	
 	
 	'Deactivate Vault Addin
 	Dim VaultAddin As Inventor.ApplicationAddIn = ThisApplication.ApplicationAddIns.ItemById("{48B682BC-42E6-4953-84C5-3D253B52E77B}")
@@ -470,3 +482,23 @@ Private Sub DwgPrint(PrinterName as String)
 	' Submit the print.
 	oPrintMgr.SubmitPrint
 End Sub 'DwgPrint
+
+Function getTemplatesFolderPath () as string
+	
+	Dim invTempLoc as String = "C:\_vaultWIP\inv_Templates_Path.txt"
+	
+	If System.IO.File.Exists(invTempLoc)
+		Dim oRead as new StreamReader(invTempLoc)
+	
+		Try 
+			return oRead.ReadLine()
+		Catch
+			return 0
+		End Try
+		
+	Else
+		'MessageBox.Show("The template path reference could not be found. ","File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		return 0
+	End if
+	
+End Function

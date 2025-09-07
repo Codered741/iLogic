@@ -1,8 +1,14 @@
 Imports System.IO
 Imports System.IO.File
+Imports System.Text
+
 
 Sub Main()
-
+	
+	'write to iLogic Log
+	SharedVariable("LogVar") = "Batch Export Drawing DXF" 
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+		
 	Dim usrTimeAck = MessageBox.Show("This rule will find all drawings of parts referenced in the BOM and Export them as ACAD DXFs to your desktop.  "  _
 		& vbLf & "This process can take some time to run, and cannot be stopped once started.  ", "Time Warning", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning)
 		
@@ -23,11 +29,6 @@ Sub Main()
 			Return
 		End If
 		
-		'write to iLogic Log
-		SharedVariable("LogVar") = "Batch Export Drawing DXF" 
-		iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
-		
-
 		Dim oAppend As System.IO.StreamWriter
 		noWrite = True
 		
@@ -147,13 +148,21 @@ End Sub
 
 Sub ExportDXF(oDoc as DrawingDocument, Path as String)
 	
+	'read in the path to the templates and test that it Exists
+	dim strTemplatesPath as String = getTemplatesFolderPath()
+	'messagebox.show(strTemplatesPath)
+	If strTemplatesPath.Length = 0 Then
+		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		Exit sub
+	End if
+	
 	'setup translator addin options
 	Dim DXFAddIn As TranslatorAddIn = ThisApplication.ApplicationAddIns.ItemById("{C24E3AC4-122E-11D5-8E91-0010B541CD80}")
 	Dim oContext As TranslationContext = ThisApplication.TransientObjects.CreateTranslationContext
 	oContext.Type = kFileBrowseIOMechanism
 	Dim oOptions As NameValueMap = ThisApplication.TransientObjects.CreateNameValueMap
 	Dim oDataMedium As DataMedium = ThisApplication.TransientObjects.CreateDataMedium
-	Dim strIniFile As String = "C:\_vaultWIP\Designs\Templates\Library\iLogic\dxf_export.ini"
+	Dim strIniFile As String = strTemplatesPath + "Library\iLogic\dxf_export.ini"
 	Dim oSheets as Sheets = oDoc.Sheets
 	Dim oSheet as Sheet '= oSheets.Item(1)
 
@@ -335,3 +344,22 @@ Function isAsm(ThisDoc As Document) As Boolean
 	End If
 End Function 'isAsm
 
+Function getTemplatesFolderPath () as string
+	
+	Dim invTempLoc as String = "C:\_vaultWIP\inv_Templates_Path.txt"
+	
+	If System.IO.File.Exists(invTempLoc)
+		Dim oRead as new StreamReader(invTempLoc)
+	
+		Try 
+			return oRead.ReadLine()
+		Catch
+			return 0
+		End Try
+		
+	Else
+		'MessageBox.Show("The template path reference could not be found. ","File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		return 0
+	End if
+	
+End Function

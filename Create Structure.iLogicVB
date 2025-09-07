@@ -1,4 +1,4 @@
-'TAIT Showfile Structure Creator
+﻿'TAIT Showfile Structure Creator
 'Purpose:
 '  To maintain consistency in show data management, this rule will create folder structure in the Showfile and store this folder path in an iProperty for future use.  It will also create an assembly, pre-configured with the correct Element/Kit information, and insert it into the current Show/Element assembly.  
 '  For Shows, the rule will create elements
@@ -7,6 +7,7 @@
 
 Imports System.IO
 Imports System.IO.Path
+Imports System.Text	
 Imports System.Collections
 Imports System.Windows.Forms
 Imports My.Computer.FileSystem
@@ -15,15 +16,23 @@ Sub Main()
 	On Error Resume Next
 	
 	SharedVariable("LogVar") = "Create Structure"
-	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")
+	
+	'read in the path to the templates and test that it Exists
+	dim strTemplatesPath as String = getTemplatesFolderPath()
+	'messagebox.show(strTemplatesPath)
+	If strTemplatesPath.Length = 0 Then
+		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		Exit sub
+	End if
 	
 	If Not ThisApplication.ActiveEditDocument Is ThisApplication.ActiveDocument Then
 		MessageBox.Show("This rule cannot be run from an in-place edit.  Please open the file exclusively, and try again.  ", "No in-place creation", MessageBoxButtons.OK, MessageBoxIcon.Error)
 		Exit Sub
 	End If
 	
-	Dim oDoc as Document = ThisApplication.ActiveEditDocument
-	Dim oCustProps as Inventor.PropertySet = oDoc.PropertySets.Item("Inventor User Defined Properties")
+	Dim oDoc As Document = ThisApplication.ActiveEditDocument
+	Dim oCustProps As Inventor.PropertySet = oDoc.PropertySets.Item("Inventor User Defined Properties")
 	
 	'check if document is assembly
 	If oDoc.DocumentType <> kAssemblyDocumentObject Then
@@ -38,7 +47,7 @@ Sub Main()
 	End If
 	
 	'get DesignLevel Prop
-	Dim pDL as Inventor.Property 
+	Dim pDL As Inventor.Property 
 	pDL = oCustProps.Item("DesignLevel")
 	
 	'catch non-existant property
@@ -77,7 +86,7 @@ Sub Main()
 			MessageBox.Show("An Error has occurred, please try again.  ", "Create Kit Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
 		End If
 		
-	Else if pDL.Value = "Kit" Then
+	Else If pDL.Value = "Kit" Then
 	
 		MessageBox.Show("Element/Kit creation can only be done from configured Show/Element Assembly.  Please check your Config, or open a Show/Element.  ", "Show/Element Only", MessageBoxButtons.OK, MessageBoxIcon.Error)
 	Else 
@@ -101,24 +110,28 @@ End Sub
 'SUBROUTINES \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 Sub CreateShow()
 	'get showfile folder - GetShowFilePath subroutine
-	Dim sfPath as String = GetShowFilePath
+	'Dim sfPath as String = GetShowFilePath   'Remove references to Show File
 	
 	showNum:
 	'get job number from user = JOBNUMBER
-	Dim ShowNumber as String = InputBox("Please enter the Base Epicor Job Number.  ", "Job Number", "")
+	Dim ShowNumber As String = InputBox("Please enter the Base 6 digit Epicor Job Number. " & vbLf & "e.g. 123456", "Job Number", "")
 	
 	If Not Int32.TryParse(ShowNumber, 000000) Then 'ShowNumber.Length = 6 Then
 		MsgBox("The Show Number must be an integer.  ")
-		Goto showNum
+		GoTo showNum
 	End If
 	
 	If Not ShowNumber.Length = 6 Then
 		MsgBox("The Show Number must be 6 digits.  ")
-		Goto showNum
+		GoTo showNum
 	End If
 	'create folder in WIP
 	'$\PROJECTNAME - PROJECTNUMBER
-	dim ShowDir = "C:\_vaultWIP\Designs\" & ParsePrjName(sfPath) '"C:\_vaultWIP\Designs\CHICAGO LYRIC OPERA 2020 RNTLS - 20A0008"
+	Dim ShowName As String = InputBox("Please enter the show name.  ", "Show Name", "").ToUpper 
+	Dim pID As String = InputBox("Please enter the Epicor project ID  " & vbLF & "e.g. 12X3456", "Project ID", "").ToUpper
+	'dim ShowDir = "C:\_vaultWIP\Designs\" & ParsePrjName(sfPath) '"C:\_vaultWIP\Designs\CHICAGO LYRIC OPERA 2020 RNTLS - 20A0008"
+	
+	Dim ShowDir = "C:\_vaultWIP\Designs\" & ShowName & " - " & pID 
 	
 	If System.IO.File.Exists(ShowDir & "\" & ShowNumber & ".iam") Then
 			MsgBox("An assembly with this name already exists in your WIP for this show.  Please check to see if the show has already been created.  ")
@@ -128,75 +141,82 @@ Sub CreateShow()
 	End If
 
 	'create new assembly
-	Dim oShowAsm as AssemblyDocument = ThisApplication.Documents.Add(kAssemblyDocumentObject, "C:\_vaultWIP\Designs\Templates\TT_Kit.iam", True)
+	Dim oShowAsm As AssemblyDocument = ThisApplication.Documents.Add(kAssemblyDocumentObject, strTemplatesPath + "TT_Kit.iam", True)
 	oShowAsm.Activate()
 	
 	'save in project folder = JOBNUMBER.iam
 	oShowAsm.SaveAs(ShowDir & "\" & ShowNumber & ".iam", False)
-	oShowAsm.ComponentDefinition.Occurrences.Item(1).Delete
+	
+	'oShowAsm.ComponentDefinition.Occurrences.Item(1).Delete 'This line deleted the banana in the kit .iam template
 	'part number = job number
 		'done automatically as a part of save
 		
 	'fill properties
-	SetProps(oShowAsm, ParsePrjName(sfPath), "MASTER ASSEMBLY", sfPath & "X-REF MASTER FILES\" & ShowNumber & " - INVENTOR MASTER ASSEMBLY\", ShowNumber, "", "Show")
-
+	SetProps(oShowAsm, ShowName, ShowName, "" , ShowNumber, "", "Show")
+	
 	oShowAsm.Update
 	oShowAsm.Save
 	
-	MessageBox.Show("The Show was created successfully. " & vbLf & ParsePrjName(sfPath) & vbLf & ShowNumber & "-MASTER ASSEMBLY", "Show Created", MessageBoxButtons.OK)
+	MessageBox.Show("The Show was created successfully. " & vbLf & ShowNumber & vbLf & ShowName & vbLf & pID , "Show Created", MessageBoxButtons.OK)
 	
 End Sub 'CreateShow
 
-Sub CreateElement(doc as AssemblyDocument)
+Sub CreateElement(doc As AssemblyDocument)
 	'get element project 
-	elementProj = Doc.PropertySets.Item("Design Tracking Properties").Item("Project").Value
+	elementProj = doc.PropertySets.Item("Design Tracking Properties").Item("Project").Value
+	Dim oPath As String = ThisDoc.Path
+	
 	'Prompt user for element number and description
 	eDesc:
-	Dim elementDesc as String = InputBox("Enter Element Description", "Element Description", "").ToUpper
+	Dim elementDesc As String = InputBox("Enter Element Description Only - No extra dashes or spaces", "Element Description", "").ToUpper
 
-	If elementDesc.Length > 37 OrElse elementDesc.Length < 3 Then
-		MsgBox("Description must be between 3 and 37 characters.  Try again")
+	If elementDesc.Length > 37 OrElse elementDesc.Length < 2 Then
+		MsgBox("Description must be between 2 and 37 characters.  Try again")
 		GoTo eDesc
 	End If
 
 	eNumber:
-	Dim elementNum As String = InputBox("Enter Element Number", "Element Number", "")
+	Dim elementNum As String = InputBox("Enter Element Number Only - No extra dashes or spaces", "Element Number", "")
 	
 	If Not elementNum.Length = 2 Then 
 		MsgBox("Element Number must be two digits.  Try Again.  ")
-		Goto eNumber
+		GoTo eNumber
 	End If
 
 	
 	If Not Int32.TryParse(elementNum, 00) Then
 		MsgBox("Element Number must be an integer. Try Again.  ")
 		Err.Clear
-		Goto eNumber
+		GoTo eNumber
 	End If
 	
 	'get show Level number
 	showNum = doc.PropertySets.Item("Design Tracking Properties").Item("Part Number").Value
 	
 	elementNum = showNum & "-" & elementNum
+	 
 	
-	' Dim ElementDir = "C:\_vaultWIP\Designs\" & elementProj & "\" & elementNum & "\"
-	' If Directory.Exists(ElementDir) Then
-			' MsgBox("A folder already exists in your WIP for this element.  Please check to see if the element has already been created.  ")
-			' Exit Sub
-	' Else 
-		' Directory.CreateDirectory(ElementDir)
-	' End If
+	 Dim ElementDir As String = oPath & "\" & elementNum & " - " & elementDesc & "\"
+	 'Dim ElementDir As String = "C:\_vaultWIP\Designs\" & elementProj & "\" & elementNum & " - " & elementDesc & "\"
+	 If Directory.Exists(ElementDir) Then
+			 MsgBox("A folder already exists in your WIP for this element.  Please check to see if the element has already been created.  ")
+			 Exit Sub
+	 Else 
+		 Directory.CreateDirectory(ElementDir)
+		 'FileIO.FileSystem.CreateDirectory(ElementDir)
+	 End If
 	
-	Dim oElementAsm As AssemblyDocument = ThisApplication.Documents.Add(kAssemblyDocumentObject, "C:\_vaultWIP\Designs\Templates\TT_Kit.iam", True)
+	Dim oElementAsm As AssemblyDocument = ThisApplication.Documents.Add(kAssemblyDocumentObject, strTemplatesPath + "TT_Kit.iam", True)
 	
-	oElementAsm.SaveAs("C:\_vaultWIP\Designs\" & elementProj & "\" & elementNum & ".iam", False)
-	oElementAsm.ComponentDefinition.Occurrences.Item(1).Delete
+	'oElementAsm.SaveAs("C:\_vaultWIP\Designs\" & ShowDir & "\" & elementNum & ".iam", False)
+	oElementAsm.SaveAs(oPath & "\" & elementNum &  ".iam", False)
+	'oElementAsm.ComponentDefinition.Occurrences.Item(1).Delete 'This line deleted the banana in the kit .iam template
 	
 	'Write properties to element
-	SetProps(oElementAsm, elementProj, elementDesc, "R:\" & elementProj & "\X-REF MASTER FILES\" & elementNum & " - " & elementDesc.ToUpper & " - INVENTOR\", elementNum, "Element Overview", "Element")
+	SetProps(oElementAsm, elementProj, elementDesc, "", elementNum, "Element Overview", "Element")
 	
-	Dim oTG as TransientGeometry = ThisApplication.TransientGeometry
-	Dim oMatrix as Matrix = oTG.CreateMatrix
+	Dim oTG As TransientGeometry = ThisApplication.TransientGeometry
+	Dim oMatrix As Matrix = oTG.CreateMatrix
 	
 	doc.Activate()
 	
@@ -229,23 +249,23 @@ Sub CreateKit(doc As AssemblyDocument)
 	'get element description from element assembly
 	eleDesc = doc.PropertySets.Item("Design Tracking Properties").Item("Description").Value
 	'get element path from assembly
-	eleExportPath = doc.PropertySets.Item("Inventor User Defined Properties").Item("exportPath").Value
+	'eleExportPath = doc.PropertySets.Item("Inventor User Defined Properties").Item("exportPath").Value
 	
 	'Prompt user for kit number and description
 	kDesc:
-	Dim kitDesc As String = InputBox("Enter Kit Description", "Kit Description", "").ToUpper
+	Dim kitDesc As String = InputBox("Enter Kit Description - No extra dashes or spaces", "Kit Description", "").ToUpper
 	
-	If kitDesc.Length > 37 OrELse kitDesc.Length < 3 Then
+	If kitDesc.Length > 37 OrElse kitDesc.Length < 3 Then
 		MsgBox("Description must be between 3 and 37 characters.  Try again")
 		GoTo kDesc
 	End If
 
 	kNumber:
-	Dim kitNum As String = InputBox("Enter Kit Number", "Kit Number", "")
+	Dim kitNum As String = InputBox("Enter Kit Number - No extra dashes or spaces", "Kit Number", "")
 
-	If Not kitNum.Length = 2 Then 
-		MsgBox("Kit Number must be two digits.  Try Again.  ")
-		Goto kNumber
+	If Not kitNum.Length < 4 Then 
+		MsgBox("Kit Number too long.  Try Again.  ")
+		GoTo kNumber
 	End If
 	
 	'num = CInt(kitNum)
@@ -253,26 +273,27 @@ Sub CreateKit(doc As AssemblyDocument)
 	If Not Int32.TryParse(kitNum, 00) Then
 		MsgBox("Kit Number must be an integer. Try Again.  ")
 		Err.Clear
-		Goto kNumber
+		GoTo kNumber
 	End If
 	
 	'get show Level number
 	showNum = doc.PropertySets.Item("Design Tracking Properties").Item("Part Number").Value
 	
 	kitNum = showNum & "-" & kitNum
+	Dim oPath As String = ThisDoc.Path
 	
-	Dim kitDir = Left(doc.FullFileName, InstrRev(doc.FullFileName, "\"))
+	Dim kitDir = Left(doc.FullFileName, InStrRev(doc.FullFileName, "\"))
 	
-	Dim okitAsm As AssemblyDocument = ThisApplication.Documents.Add(kAssemblyDocumentObject, "C:\_vaultWIP\Designs\Templates\TT_Kit.iam", True)
+	Dim okitAsm As AssemblyDocument = ThisApplication.Documents.Add(kAssemblyDocumentObject, strTemplatesPath + "TT_Kit.iam", True)
 	
-	okitAsm.SaveAs(kitDir & "\" & eleNum & "\" & kitNum & ".iam", False)
-	okitAsm.ComponentDefinition.Occurrences.Item(1).Delete
+	okitAsm.SaveAs(oPath & "\" & eleNum & " - " & eleDesc & "\" & kitNum & ".iam", False)
+	'okitAsm.ComponentDefinition.Occurrences.Item(1).Delete 'This line deleted the banana in the kit .iam template
 	
 	'Write properties to kit
 	SetProps(okitAsm, kitProj, kitDesc, eleExportPath & "SUB ASSEMBLIES\" & kitNum & "-" & kitDesc.ToUpper & "\", kitNum, eleDesc, "Kit")
 	
-	Dim oTG as TransientGeometry = ThisApplication.TransientGeometry
-	Dim oMatrix as Matrix = oTG.CreateMatrix
+	Dim oTG As TransientGeometry = ThisApplication.TransientGeometry
+	Dim oMatrix As Matrix = oTG.CreateMatrix
 	
 	doc.Activate()
 	
@@ -291,9 +312,9 @@ Sub CreateKit(doc As AssemblyDocument)
 	MessageBox.Show("The Kit was created successfully. " & vbLf &  kitNum & "-" & kitDesc.ToUpper, "Kit Created", MessageBoxButtons.OK)
 End Sub 'CreateKit
 
-Private Sub SetProps(oAsm As AssemblyDocument, Project as String, Description As String, ePath as String, JobNumber As String, ElementDesc As String, DesignLevel As String)
-	Dim oShowCustProps as PropertySet = oAsm.PropertySets.Item("Inventor User Defined Properties")
-	Dim oShowDesProps as PropertySet = oAsm.PropertySets.Item("Design Tracking Properties")
+Private Sub SetProps(oAsm As AssemblyDocument, Project As String, Description As String, ePath As String, JobNumber As String, ElementDesc As String, DesignLevel As String)
+	Dim oShowCustProps As PropertySet = oAsm.PropertySets.Item("Inventor User Defined Properties")
+	Dim oShowDesProps As PropertySet = oAsm.PropertySets.Item("Design Tracking Properties")
 	Dim oShowSumProps As PropertySet = oAsm.PropertySets.Item("Inventor Summary Information")
 	'part number = job number
 		'done automatically as a part of save
@@ -313,10 +334,10 @@ Private Sub SetProps(oAsm As AssemblyDocument, Project as String, Description As
 	oShowSumProps.Item("Revision Number").Value = "0"
 	
 	'store path to "exportPath" iprop
-	oShowCustProps.Add(ePath, "exportPath")
-	If Directory.Exists(oShowCustProps.Item("exportPath").Value) = False Then
-		Directory.CreateDirectory(oShowCustProps.Item("exportPath").Value)
-	End If
+'	oShowCustProps.Add(ePath, "exportPath")
+'	If Directory.Exists(oShowCustProps.Item("exportPath").Value) = False Then
+'		Directory.CreateDirectory(oShowCustProps.Item("exportPath").Value)
+'	End If
 	
 	'Run Kit Epicor Config Rule (set job number)
 	oShowCustProps.Item("JobNum").Value = JobNumber
@@ -357,7 +378,7 @@ Function GetShowFilePath() As String
 	
 End Function 'GetShowFilePath
 
-Function ParsePrjName(folder as String) As String
+Function ParsePrjName(folder As String) As String
 	' Dim test As Integer = folder.Length - InStr(folder, "-")
 	' Dim numLen as Integer = 0
 	' Dim FolderLen as Integer = folder.Length
@@ -377,3 +398,23 @@ Function ParsePrjName(folder as String) As String
 	Return Left(Prj, Prj.Length - 1)
 	
 End Function 'ParsePrjName
+
+Function getTemplatesFolderPath () as string
+	
+	Dim invTempLoc as String = "C:\_vaultWIP\inv_Templates_Path.txt"
+	
+	If System.IO.File.Exists(invTempLoc)
+		Dim oRead as new StreamReader(invTempLoc)
+	
+		Try 
+			return oRead.ReadLine()
+		Catch
+			return 0
+		End Try
+		
+	Else
+		'MessageBox.Show("The template path reference could not be found. ","File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		return 0
+	End if
+	
+End Function

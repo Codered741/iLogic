@@ -1,16 +1,32 @@
+'AUTHOR: Cody Redding
+'CONTACT: codered741@gmail.com
+
 Imports System.Collections.Generic
+Imports System.IO
+Imports System.Text
+
 'code taken and modified from:
 'http://adndevblog.typepad.com/manufacturing/2015/01/add-external-ilogic-rule-to-event-trigger.html
 
 Sub Main
 
 	Dim oTemplateDoc As Document
-	Dim oTemplate As String = "C:\_vaultWIP\Designs\Templates\Disney\HKDL CSS Template.dwg"  'file to copy events from
 	Dim oDoc as Document = ThisApplication.ActiveDocument
 	Dim oModelDoc as Document' = oDoc.AllReferencedDocuments.Item(1)
 	Dim Border1Name as String = "HKDL Border"
 	Dim TB1Name as String = "HKDL CSS TB"
 	Dim EngrApprBy As String = ""
+	
+	'read in the path to the templates and test that it Exists
+	dim strTemplatesPath as String = getTemplatesFolderPath()
+	'messagebox.show(strTemplatesPath)
+	If strTemplatesPath.Length = 0 Then
+		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		Exit sub
+	End if
+	
+	Dim oTemplate As String = strTemplatesPath + "Disney\HKDL CSS Template.dwg"  'file to copy events from
+	
 	
 	Try
 		oModelDoc = oDoc.AllReferencedDocuments.Item(1)
@@ -41,7 +57,7 @@ Sub Main
 	oCtrlDef.Item("UpdateCopiedModeliPropertiesCmd").Execute
 	oCtrlDef.Item("UpdateStylesCmd").Execute
 	
-	SharedVariable("LogVar") = "HKDL Replace TB - TEST"
+	SharedVariable("LogVar") = "HKDL Replace TB"
 	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
 	
 	'check file type 
@@ -117,9 +133,9 @@ Sub Main
 	oSheet1.AddBorder(oBorderDef)
 	oSheet1.AddTitleBlock(oTB1Def)
 
-	If oDoc.AllReferencedDocuments.Item(1).DocumentType = kPartDocumentObject Then	
-		InsertSketchedSymbolOnSheet(oDoc, "Univ. Part Notes")
-	End If
+	' If oDoc.AllReferencedDocuments.Item(1).DocumentType = kPartDocumentObject Then	
+		' InsertSketchedSymbolOnSheet(oDoc, "Univ. Part Notes")
+	' End If
 	
 	If oSheets.Count > 1 Then
 		
@@ -234,3 +250,23 @@ Function GetiLogicAddin(oApplication As Inventor.Application) As Object
 	Exit Function
 	NotFound:
 End Function 'GetiLogicAddin
+
+Function getTemplatesFolderPath () as string
+	
+	Dim invTempLoc as String = "C:\_vaultWIP\inv_Templates_Path.txt"
+	
+	If System.IO.File.Exists(invTempLoc)
+		Dim oRead as new StreamReader(invTempLoc)
+	
+		Try 
+			return oRead.ReadLine()
+		Catch
+			return 0
+		End Try
+		
+	Else
+		'MessageBox.Show("The template path reference could not be found. ","File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		return 0
+	End if
+	
+End Function

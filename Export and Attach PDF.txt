@@ -1,4 +1,10 @@
-﻿Sub Main()
+﻿'AUTHOR: Cody Redding
+'CONTACT: codered741@gmail.com
+
+Imports System.IO
+Imports System.Text
+
+Sub Main()
 'declarations
 	Dim oDoc as Document = ThisApplication.ActiveDocument
 	Dim compOcc as ComponentOccurrence
@@ -8,6 +14,14 @@
 	
 	SharedVariable("LogVar") = "Export PDF"
 	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
+	'read in the path to the templates and test that it exists
+	dim strTemplatesPath as String = getTemplatesFolderPath()
+	'messagebox.show(strTemplatesPath)
+	If strTemplatesPath.Length = 0 Then
+		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		Exit sub
+	End if
 	
 	If oDoc.FileSaveCounter >= 1 Then
 		' Are we in a Drawing Document?
@@ -92,7 +106,7 @@
 			oPath = ThisDoc.Path
 			oFileName = ThisDoc.FileName(False) 'without extension
 			oPDFAddIn = ThisApplication.ApplicationAddIns.ItemById _
-			("{0AC6FD96-2F4D-42CE-8BE0-8AEA580399E4}")
+			("{0AC6FD95-2F4D-42CE-8BE0-8AEA580399E4}")
 			oDocument = ThisApplication.ActiveDocument
 			oContext = ThisApplication.TransientObjects.CreateTranslationContext
 			oContext.Type = IOMechanismEnum.kFileBrowseIOMechanism
@@ -150,3 +164,23 @@
 
 	End If
 End Sub
+
+Function getTemplatesFolderPath () as string
+	
+	Dim invTempLoc as String = "C:\_vaultWIP\inv_Templates_Path.txt"
+	
+	If System.IO.File.Exists(invTempLoc)
+		Dim oRead as new StreamReader(invTempLoc)
+	
+		Try 
+			return oRead.ReadLine()
+		Catch
+			return 0
+		End Try
+		
+	Else
+		'MessageBox.Show("The template path reference could not be found. ","File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		return 0
+	End if
+	
+End Function

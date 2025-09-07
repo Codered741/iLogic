@@ -1,6 +1,9 @@
 ﻿'AUTHOR: Cody Redding
 'CONTACT: codered741@gmail.com
 
+Imports System.IO
+Imports System.Text
+
 Sub Main()
 'declarations
 	'Access active drawing document
@@ -9,6 +12,14 @@ Sub Main()
 	
 	SharedVariable("LogVar") = "Export DXF"
 	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
+	'read in the path to the templates and test that it Exists
+	dim strTemplatesPath as String = getTemplatesFolderPath()
+	'messagebox.show(strTemplatesPath)
+	If strTemplatesPath.Length = 0 Then
+		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		Exit sub
+	End if
 	
 'Main	
 	If oDoc.FileSaveCounter >= 1 Then
@@ -62,7 +73,7 @@ Sub Main()
 			oContext.Type = kFileBrowseIOMechanism
 			Dim oOptions As NameValueMap = ThisApplication.TransientObjects.CreateNameValueMap
 			Dim oDataMedium As DataMedium = ThisApplication.TransientObjects.CreateDataMedium
-			Dim strIniFile As String = "C:\_vaultWIP\Designs\Templates\Library\iLogic\dxf_export.ini"
+			Dim strIniFile As String = strTemplatesPath + "Library\iLogic\dxf_export.ini"
 			
 			'setup file names and prepare to attach as OLE
 			Dim FileNameDXF As String
@@ -102,7 +113,7 @@ Sub Main()
 						Exit Sub
 					Else
 						MessageBox.Show("There is something wrong.  Please contact a Vault Administrator for assistance.  ", "GET HELP!!!", MessageBoxButtons.OK, MessageBoxIcon.Error)
-						ThisDoc.Launch("C:\_vaultWIP\Designs\Templates\Library\iLogic\Special\spiderdick.jpg")
+						ThisDoc.Launch(strTemplatesPath + "Library\iLogic\Special\spiderdick.jpg")
 						Exit Sub
 					End If
 				End If
@@ -178,3 +189,23 @@ Sub Main()
 		
 	End If
 End Sub
+
+Function getTemplatesFolderPath () as string
+	
+	Dim invTempLoc as String = "C:\_vaultWIP\inv_Templates_Path.txt"
+	
+	If System.IO.File.Exists(invTempLoc)
+		Dim oRead as new StreamReader(invTempLoc)
+	
+		Try 
+			return oRead.ReadLine()
+		Catch
+			return 0
+		End Try
+		
+	Else
+		'MessageBox.Show("The template path reference could not be found. ","File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		return 0
+	End if
+	
+End Function
