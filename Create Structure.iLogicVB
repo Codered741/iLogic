@@ -13,7 +13,7 @@ Imports System.Windows.Forms
 Imports My.Computer.FileSystem
 
 Sub Main()
-	On Error Resume Next
+	'On Error Resume Next
 	
 	SharedVariable("LogVar") = "Create Structure"
 	iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")
@@ -46,28 +46,30 @@ Sub Main()
 		Exit Sub
 	End If
 	
-	'get DesignLevel Prop
-	Dim pDL As Inventor.Property 
-	pDL = oCustProps.Item("DesignLevel")
+	Dim pDL As Inventor.Property
 	
-	'catch non-existant property
-	If Err.Number <> 0 Then
-		
-		'add DesignLevel property
-		oCustProps.Add("", "DesignLevel")
+	Try 
+		'get DesignLevel Prop
 		pDL = oCustProps.Item("DesignLevel")
-		Err.Clear
-	End If
+	'catch non-existant property
+	Catch
+			'add DesignLevel property
+			oCustProps.Add("", "DesignLevel")
+			pDL = oCustProps.Item("DesignLevel")
+			Err.Clear
+	End Try
 	
 	'handle shows and elements differently, if not configured, create show.  
 	If pDL.Value = "Show" 'create Elements
 	
-		If oCustProps.Item("AutoStruct").Value = True Then
-			CreateElement(oDoc)
-		Else
-			MessageBox.Show("This show was not created with the correct rule.  Please contact #des_inventor for assistance", "Not Auto Assembly", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		Try
+			If oCustProps.Item("AutoStruct").Value = True Then
+				CreateElement(oDoc, strTemplatesPath)
+			End If
+		Catch
+			MessageBox.Show("This show was not created with the correct rule.  Please contact #des_inventor for assistance", "Show not Auto Assembly", MessageBoxButtons.OK, MessageBoxIcon.Error)
 			Exit Sub
-		End If
+		End Try
 		
 		If Err.Number <> 0 Then 
 			MessageBox.Show("An Error has occurred, please try again.  ", "Create Element Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -75,12 +77,14 @@ Sub Main()
 		
 	Else If pDL.Value = "Element" Then 'Create Kits
 	
-		If oCustProps.Item("AutoStruct").Value = True Then
-			CreateKit(oDoc)
-		Else
-			MessageBox.Show("This Element was not created with the correct rule.  Please contact #des_inventor for assistance", "Not Auto Assembly", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		Try
+			If oCustProps.Item("AutoStruct").Value = True Then
+				CreateKit(oDoc, strTemplatesPath)
+			End If
+		Catch
+			MessageBox.Show("This Element was not created with the correct rule.  Please contact #des_inventor for assistance", "Element not Auto Assembly", MessageBoxButtons.OK, MessageBoxIcon.Error)
 			Exit Sub
-		End If
+		End Try 
 		
 		If Err.Number <> 0 Then 
 			MessageBox.Show("An Error has occurred, please try again.  ", "Create Kit Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -93,7 +97,7 @@ Sub Main()
 		usrCreateShow = MessageBox.Show("Do you want to create a show?", "Create Show?", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
 		If usrCreateShow = vbYes Then
 			'show create subroutine
-			CreateShow
+			CreateShow(strTemplatesPath)
 		Else
 			MsgBox("Nothing left to do!" & vbLf & "¯\_(ツ)_/¯")
 			Exit Sub
@@ -108,7 +112,7 @@ End Sub
 
 
 'SUBROUTINES \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-Sub CreateShow()
+Sub CreateShow(strTemplatesPath as String)
 	'get showfile folder - GetShowFilePath subroutine
 	'Dim sfPath as String = GetShowFilePath   'Remove references to Show File
 	
@@ -161,7 +165,7 @@ Sub CreateShow()
 	
 End Sub 'CreateShow
 
-Sub CreateElement(doc As AssemblyDocument)
+Sub CreateElement(doc As AssemblyDocument, strTemplatesPath as String)
 	'get element project 
 	elementProj = doc.PropertySets.Item("Design Tracking Properties").Item("Project").Value
 	Dim oPath As String = ThisDoc.Path
@@ -236,7 +240,7 @@ Sub CreateElement(doc As AssemblyDocument)
 	
 End Sub 'CreateElement
 
-Sub CreateKit(doc As AssemblyDocument)
+Sub CreateKit(doc As AssemblyDocument, strTemplatesPath As string)
 	'create kit assembly
 		'file number is element job number concatenated with user entered kit number, and saved into the same directory as element
 	'new assembly to be inserted at origin of the element assembly, and grounded.
@@ -283,7 +287,7 @@ Sub CreateKit(doc As AssemblyDocument)
 	Dim oPath As String = ThisDoc.Path
 	
 	Dim kitDir = Left(doc.FullFileName, InStrRev(doc.FullFileName, "\"))
-	
+
 	Dim okitAsm As AssemblyDocument = ThisApplication.Documents.Add(kAssemblyDocumentObject, strTemplatesPath + "TT_Kit.iam", True)
 	
 	okitAsm.SaveAs(oPath & "\" & eleNum & " - " & eleDesc & "\" & kitNum & ".iam", False)
@@ -408,6 +412,7 @@ Function getTemplatesFolderPath () as string
 	
 		Try 
 			return oRead.ReadLine()
+			oRead.Close()
 		Catch
 			return 0
 		End Try
