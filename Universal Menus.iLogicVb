@@ -1,6 +1,9 @@
 ﻿Sub Main()
 
-GoExcel.Close()
+	SharedVariable("LogVar") = "Universal Menus"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
+	GoExcel.Close()
 
 	'XLpth = ("C:\_vaultWIP\Designs\Templates\Library\iLogic\Universal Show-Element-Kit List.xlsx")
 	XLpth = ("Y:\CAD STANDARDS\Inventor\Universal Show-Element-Kit List.xlsx")

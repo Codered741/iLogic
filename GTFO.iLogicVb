@@ -1,22 +1,25 @@
 ﻿Sub Main()
 
-Dim oDoc As Inventor.Document
-ThisApplication.SilentOperation = True	
-For Each oDoc In ThisApplication.Documents.VisibleDocuments
-'ThisDoc.Save
-oDoc.Activate
-Try
-	oDoc.Save2(True)
-		Dim oControlDef As Inventor.ControlDefinition
-	oControlDef = ThisApplication.CommandManager.ControlDefinitions.Item("VaultCheckinTop")
-	oControlDef.Execute2(True)
-Catch ex As Exception
-	Logger.Error("Check-In failed; likely, the file wasn't checked out.")
-End Try
-oDoc.Close(True)
-Next
+	SharedVariable("LogVar") = "GTFO"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
+	Dim oDoc As Inventor.Document
+	ThisApplication.SilentOperation = True	
+	For Each oDoc In ThisApplication.Documents.VisibleDocuments
+	'ThisDoc.Save
+	oDoc.Activate
+	Try
+		oDoc.Save2(True)
+			Dim oControlDef As Inventor.ControlDefinition
+		oControlDef = ThisApplication.CommandManager.ControlDefinitions.Item("VaultCheckinTop")
+		oControlDef.Execute2(True)
+	Catch ex As Exception
+		Logger.Error("Check-In failed; likely, the file wasn't checked out.")
+	End Try
+	oDoc.Close(True)
+	Next
 
-ThisApplication.SilentOperation = False
-'MessageBox.Show("Files checked in" &vbLf & "GTFO", "Woooo!")
+	ThisApplication.SilentOperation = False
+	'MessageBox.Show("Files checked in" &vbLf & "GTFO", "Woooo!")
 
 End Sub

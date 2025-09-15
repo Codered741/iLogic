@@ -12,6 +12,9 @@ Imports VB = Connectivity.Application.VaultBase
 
 Sub Main()
 
+	SharedVariable("LogVar") = "Get Latest from Vault"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+
 	Dim mVltCon As VDF.Vault.Currency.Connections.Connection 
 	mVltCon = VB.ConnectionManager.Instance.Connection
 	  

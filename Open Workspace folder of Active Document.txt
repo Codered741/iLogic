@@ -1,3 +1,8 @@
+	
+SharedVariable("LogVar") = "Open Workspace Folder of Active Document"
+iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
+
 Dim oDoc as Document = ThisApplication.ActiveEditDocument
 Dim FilePath as String 
 FilePath = Left(oDoc.FullFileName, InStrRev(oDoc.FullFileName, "\"))

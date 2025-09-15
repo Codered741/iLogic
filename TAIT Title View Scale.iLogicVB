@@ -1,3 +1,7 @@
+
+	SharedVariable("LogVar") = "TAIT Title View Scale"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+
 'Overview View Scale
 Dim oDoc As ThisApplication.ActiveDocument
 Dim oSheets As Sheets = oDoc.Sheets

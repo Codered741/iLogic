@@ -1,6 +1,10 @@
 'Kit Data to clipboard for Slack kit release
 Imports My.Computer.Clipboard
 Sub Main()
+
+	SharedVariable("LogVar") = "Kit Info to Clipboard"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
 	Dim oDoc as Document = ThisApplication.ActiveDocument
 	Dim FinalText as String
 	Dim DesPropSet as PropertySet = oDoc.PropertySets.Item("Design Tracking Properties")

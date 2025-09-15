@@ -1,6 +1,10 @@
 'Make all drawing views associative. 
 
 Sub Main()
+
+	SharedVariable("LogVar") = "Drawing Make all Views Associative"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
 	On Error Resume Next 
 	Dim oDoc as DrawingDocument = ThisApplication.ActiveDocument
 	If Err.Number <> 0 Then

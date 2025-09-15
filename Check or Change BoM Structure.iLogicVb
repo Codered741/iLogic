@@ -1,5 +1,9 @@
 ﻿Sub Main()
 	
+SharedVariable("LogVar") = "Check or Change BOM Structure"
+iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+
+
 Dim oDoc As Document = ThisApplication.ActiveDocument
 oBOMStruct = oDoc.ComponentDefinition.BOMStructure
 Dim oStrucText As String

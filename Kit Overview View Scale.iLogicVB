@@ -1,5 +1,8 @@
 On Error Resume Next
 
+SharedVariable("LogVar") = "Kit Overview View Scale"
+iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
 ViewPlaceH = (ThisDrawing.Sheet("Title Page:1").Width * 0.66 ul) + HOverview
 ViewPlaceV = (ThisDrawing.Sheet("Title Page:1").Height/3) + VOverview
 

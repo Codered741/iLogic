@@ -1,3 +1,7 @@
+
+	SharedVariable("LogVar") = "Weld Jig AutoSize"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
 iLogicVb.UpdateWhenDone = True
 
 Dim sizes As New List(Of Double)

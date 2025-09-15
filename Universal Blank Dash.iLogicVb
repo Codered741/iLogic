@@ -1,4 +1,7 @@
 ﻿
+	SharedVariable("LogVar") = "Universal Blank Dash"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+
 'This rule fills blank properties with a "-"
 
 If iProperties.Value("Custom", "REV 1 DATE") = ("")

@@ -1,4 +1,8 @@
-﻿Dim oDoc As Document = ThisApplication.ActiveDocument
+﻿
+SharedVariable("LogVar") = "Mark Selected as Make"
+iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+
+Dim oDoc As Document = ThisApplication.ActiveDocument
 Dim comps As SelectSet = oDoc.SelectSet
 Dim comp As ComponentOccurrence
 

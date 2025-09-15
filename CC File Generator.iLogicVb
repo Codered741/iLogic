@@ -1,5 +1,7 @@
 ﻿''https://forums.autodesk.com/t5/inventor-programming-ilogic/generate-all-members-of-a-content-familiar/td-p/11566816
 
+SharedVariable("LogVar") = "CC File Generator"
+iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
 
 'active assembly
 Dim oMainAsm As AssemblyDocument = ThisDoc.Document

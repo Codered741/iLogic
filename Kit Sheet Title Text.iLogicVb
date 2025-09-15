@@ -1,4 +1,8 @@
 ﻿Sub Main ()
+
+	SharedVariable("LogVar") = "Kit Sheet Title Text"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
     ' a reference to the drawing document.
     ' This assumes a drawing document is active.
     Dim oDrawDoc As DrawingDocument

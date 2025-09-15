@@ -1,4 +1,8 @@
-﻿XLpth = ("Y:\CAD STANDARDS\Inventor\Universal Show-Element-Kit List.xlsx")
+﻿
+SharedVariable("LogVar") = "Universal Excel"
+iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
+XLpth = ("Y:\CAD STANDARDS\Inventor\Universal Show-Element-Kit List.xlsx")
 Dim objExcel = CreateObject("Excel.Application")
 Dim objWorkbook = objExcel.Workbooks.Open(XLpth)
 objExcel.Application.Visible = True

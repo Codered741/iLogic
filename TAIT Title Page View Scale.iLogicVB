@@ -1,4 +1,8 @@
 Sub Main()
+
+	SharedVariable("LogVar") = "TAIT Title Page View Scale"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
 	'Try
 	Dim oDoc as DrawingDocument = ThisApplication.ActiveDocument
 	Dim oSheets as Sheets = oDoc.Sheets

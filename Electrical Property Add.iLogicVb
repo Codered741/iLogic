@@ -1,17 +1,21 @@
 ﻿'Adds custom iProperties for Electrical Design use. 
 Sub Main()
-'Make a ref to active doc
-Dim oDoc As Document
-oDoc = ThisApplication.ActiveDocument
 
-Dim CTRLSTDProps As New List(Of String)
-Dim CTRLStrParams As New List(Of String)
+	SharedVariable("LogVar") = "Electrical Property Add"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
+	'Make a ref to active doc
+	Dim oDoc As Document
+	oDoc = ThisApplication.ActiveDocument
 
-'If oDoc.DocumentType = 12291 Then 'kAssemblyDocumentObject
-'		oCompDef = CType(oDoc.ComponentDefinition, AssemblyComponentDefinition)
-'	Else If oDoc.DocumentType = 12290 Then 'kPartDocumentObject
-'		oCompDef = CType(oDoc.ComponentDefinition, PartComponentDefinition)
-'	End If	
+	Dim CTRLSTDProps As New List(Of String)
+	Dim CTRLStrParams As New List(Of String)
+
+	'If oDoc.DocumentType = 12291 Then 'kAssemblyDocumentObject
+	'		oCompDef = CType(oDoc.ComponentDefinition, AssemblyComponentDefinition)
+	'	Else If oDoc.DocumentType = 12290 Then 'kPartDocumentObject
+	'		oCompDef = CType(oDoc.ComponentDefinition, PartComponentDefinition)
+	'	End If	
 
 	CTRLSTDProps.Add("Heat Load Watts")
 	CTRLSTDProps.Add("Max Temp F")
@@ -30,51 +34,51 @@ Dim CTRLStrParams As New List(Of String)
 	'ParamAdd(CTRLStrParams, "TXT")
 	
 
-'selected components collection
-Dim oSelected As ObjectCollection
-oSelected = ThisApplication.TransientObjects.CreateObjectCollection
+	'selected components collection
+	Dim oSelected As ObjectCollection
+	oSelected = ThisApplication.TransientObjects.CreateObjectCollection
 
-Dim oCount As Integer
-oCount = oDoc.SelectSet.Count
+	Dim oCount As Integer
+	oCount = oDoc.SelectSet.Count
 
-'Check that at least 1 is selected
-If oCount = 0 Then
-	MessageBox.Show("Electrical properties added to active document." & vbLf & "No additional item selected", "iLogic")
-	Exit Sub 'bail out
-End If
-
-'add to Object Collection
-Dim i As Long
-For i = 1 To oCount
-	If oDoc.SelectSet.Item(i).Type = _
-		ObjectTypeEnum.kComponentOccurrenceObject Then
-		oSelected.Add (oDoc.SelectSet.Item(i))
+	'Check that at least 1 is selected
+	If oCount = 0 Then
+		MessageBox.Show("Electrical properties added to active document." & vbLf & "No additional item selected", "iLogic")
+		Exit Sub 'bail out
 	End If
-Next
 
-'do stuff to the selected files here:
-Dim Occ As ComponentOccurrence
+	'add to Object Collection
+	Dim i As Long
+	For i = 1 To oCount
+		If oDoc.SelectSet.Item(i).Type = _
+			ObjectTypeEnum.kComponentOccurrenceObject Then
+			oSelected.Add (oDoc.SelectSet.Item(i))
+		End If
+	Next
 
-'get names item name from collection
-'add iProperties
-For i = 1 To oCount
-	oMsg = oMsg & vbLf & oDoc.SelectSet.Item(i).Name
-	'PropAdd(CTRLSTDProps)
-	Occ=oDoc.SelectSet.Item(i)
-	customPropertySet = Occ.Definition.Document.PropertySets.Item("Inventor User Defined Properties")
-	For Each prop In CTRLSTDProps
-		Try
-			iprop = customPropertySet.Item(prop)
-		Catch
-			' Assume error means not found
-			customPropertySet.Add("",prop)
-			'iProperties.Value("", prop) = ""
-		End Try
-		Next
-Next
+	'do stuff to the selected files here:
+	Dim Occ As ComponentOccurrence
 
-MessageBox.Show(oCount _
-& " Component(s) updated." & vbLf & oMsg, "iLogic")
+	'get names item name from collection
+	'add iProperties
+	For i = 1 To oCount
+		oMsg = oMsg & vbLf & oDoc.SelectSet.Item(i).Name
+		'PropAdd(CTRLSTDProps)
+		Occ=oDoc.SelectSet.Item(i)
+		customPropertySet = Occ.Definition.Document.PropertySets.Item("Inventor User Defined Properties")
+		For Each prop In CTRLSTDProps
+			Try
+				iprop = customPropertySet.Item(prop)
+			Catch
+				' Assume error means not found
+				customPropertySet.Add("",prop)
+				'iProperties.Value("", prop) = ""
+			End Try
+			Next
+	Next
+
+	MessageBox.Show(oCount _
+	& " Component(s) updated." & vbLf & oMsg, "iLogic")
 
 End Sub
 

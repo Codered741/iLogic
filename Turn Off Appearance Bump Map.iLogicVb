@@ -1,4 +1,8 @@
-﻿ 'This rule will turn of bump mapping for all DOCUMENT APPEARANCES
+﻿ 
+ 	SharedVariable("LogVar") = "Turn Off Appearance Bump Map"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+ 
+ 'This rule will turn of bump mapping for all DOCUMENT APPEARANCES
  
  Sub Main 'Get active document
  Dim oDoc As Document = ThisApplication.ActiveDocument

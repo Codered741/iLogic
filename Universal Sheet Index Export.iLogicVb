@@ -4,6 +4,10 @@ Imports Microsoft.Office.Interop.Excel
 Imports System.IO.Path
 Imports System.IO
 Imports System.Collections
+
+SharedVariable("LogVar") = "Universal Sheet Index Export"
+iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
 If ThisDoc.Document.DocumentType <> DocumentTypeEnum.kDrawingDocumentObject Then
 	MsgBox("A Drawing document must be active for this code to work. Exiting.", vbCritical, "")
 	Exit Sub

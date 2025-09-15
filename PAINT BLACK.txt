@@ -1,2 +1,4 @@
+SharedVariable("LogVar") = "Paint Black"
+iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
 iProperties.PartColor = "TAIT BLACK"
 MsgBox("Changed Finish")

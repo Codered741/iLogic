@@ -1,4 +1,8 @@
-﻿' Start of iLogic rule =================================================
+﻿
+	SharedVariable("LogVar") = "Universal Code Injector"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
+' Start of iLogic rule =================================================
 ' This iLogic rule automatically creates a new iLogic rule in the active document.
 Dim oDoc As Document = ThisApplication.ActiveDocument
 Dim RuleName As String = "Universal Property Update"

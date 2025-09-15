@@ -1,2 +1,5 @@
+SharedVariable("LogVar") = "BLACK UHMW"
+iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+
 iProperties.Material = "UHMW, BLACK"
 MsgBox("Changed Material")
