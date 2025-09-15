@@ -19,7 +19,7 @@ Sub Main()
 	iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")
 	
 	'read in the path to the templates and test that it Exists
-	dim strTemplatesPath as String = getTemplatesFolderPath()
+	dim strTemplatesPath as String = "C:\_vaultWIP\Designs\Templates\"  'getTemplatesFolderPath()
 	'messagebox.show(strTemplatesPath)
 	If strTemplatesPath.Length = 0 Then
 		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -67,7 +67,7 @@ Sub Main()
 				CreateElement(oDoc, strTemplatesPath)
 			End If
 		Catch
-			MessageBox.Show("This show was not created with the correct rule.  Please contact #des_inventor for assistance", "Show not Auto Assembly", MessageBoxButtons.OK, MessageBoxIcon.Error)
+			MessageBox.Show("This show was not created with the correct rule.  Please contact #help_inventor for assistance", "Show not Auto Assembly", MessageBoxButtons.OK, MessageBoxIcon.Error)
 			Exit Sub
 		End Try
 		
@@ -82,7 +82,7 @@ Sub Main()
 				CreateKit(oDoc, strTemplatesPath)
 			End If
 		Catch
-			MessageBox.Show("This Element was not created with the correct rule.  Please contact #des_inventor for assistance", "Element not Auto Assembly", MessageBoxButtons.OK, MessageBoxIcon.Error)
+			MessageBox.Show("This Element was not created with the correct rule.  Please contact #help_inventor for assistance", "Element not Auto Assembly", MessageBoxButtons.OK, MessageBoxIcon.Error)
 			Exit Sub
 		End Try 
 		

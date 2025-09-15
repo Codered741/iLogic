@@ -16,7 +16,7 @@ Sub Main()
 	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
 	
 	'read in the path to the templates and test that it exists
-	dim strTemplatesPath as String = getTemplatesFolderPath()
+	dim strTemplatesPath as String = "C:\_vaultWIP\Designs\Templates\"  'getTemplatesFolderPath()
 	'messagebox.show(strTemplatesPath)
 	If strTemplatesPath.Length = 0 Then
 		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)

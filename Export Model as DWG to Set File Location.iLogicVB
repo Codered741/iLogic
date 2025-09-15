@@ -13,7 +13,7 @@ Imports System.Text
 Sub Main()
 	
 	'read in the path to the templates and test that it Exists
-	dim strTemplatesPath as String = getTemplatesFolderPath()
+	dim strTemplatesPath as String = "C:\_vaultWIP\Designs\Templates\"  'getTemplatesFolderPath()
 	'messagebox.show(strTemplatesPath)
 	If strTemplatesPath.Length = 0 Then
 		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
