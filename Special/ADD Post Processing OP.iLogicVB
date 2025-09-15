@@ -1,4 +1,8 @@
 ﻿Sub Main()
+
+	SharedVariable("LogVar") = "Special - ADD Post Processing OP"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
 	Dim oDoc As Document = ThisApplication.ActiveDocument
 	Dim comps As SelectSet = oDoc.SelectSet
 	Dim comp As ComponentOccurrence

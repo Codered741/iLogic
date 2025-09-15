@@ -7,6 +7,9 @@ Dim opFactory As iPartFactory
 Dim opRow As iPartTableRow
 Dim Max As Integer = 10
 
+	SharedVariable("LogVar") = "Special - Export All iPart Members as DWG"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+
 InventorVb.DocumentUpdate()
 
 opFactory = ThisApplication.ActiveDocument.ComponentDefinition.iPartFactory

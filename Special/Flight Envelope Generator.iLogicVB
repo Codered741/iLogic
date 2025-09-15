@@ -2,6 +2,10 @@
 Imports System.Windows.Forms
 
 Sub Main()
+
+	SharedVariable("LogVar") = "Special - Flight Envelope Generator"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
 	'On Error Resume Next
 	Dim oDoc As PartDocument = ThisApplication.ActiveDocument
 	Dim oCompDef As PartComponentDefinition = oDoc.ComponentDefinition

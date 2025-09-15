@@ -1,4 +1,7 @@
-﻿Dim oDrawingType As String = ".dwg"
+﻿SharedVariable("LogVar") = "Special - Save and Replace w Drawing"
+iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+
+Dim oDrawingType As String = ".dwg"
 Dim oDoc As Document = ThisApplication.ActiveDocument
 Dim oSelected As ObjectCollection = ThisApplication.TransientObjects.CreateObjectCollection
 

@@ -1,4 +1,6 @@
-
+	SharedVariable("LogVar") = "Special - Delete Custom Props"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
 Dim oDoc as Document = ThisApplication.ActiveDocument
 Dim oCustProps as Inventor.PropertySet = oDoc.PropertySets.Item("Inventor User Defined Properties")
 

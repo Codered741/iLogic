@@ -1,4 +1,8 @@
 Sub Main()
+
+	SharedVariable("LogVar") = "Special - Waterworld Symbol Update"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
 	Dim oDoc as Document = ThisApplication.ActiveDocument
 	
 	If Not oDoc.DocumentType = kDrawingDocumentType Then

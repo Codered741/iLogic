@@ -9,6 +9,9 @@ Sub Main
 
 	msgbox("This rule is obsolete, and may not be used.  ")
 	
+	SharedVariable("LogVar") = "Special - SMLYDK Save AS-FL"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
 	' 'read in the path to the templates and test that it Exists
 	' dim strTemplatesPath as String = getTemplatesFolderPath()
 	' 'messagebox.show(strTemplatesPath)

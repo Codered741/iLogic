@@ -7,7 +7,9 @@ Dim oCompDef As Object
 oCompDef = ThisApplication.ActiveDocument.ComponentDefinition
 Dim oOccurrence As ComponentOccurrence
 
-
+	SharedVariable("LogVar") = "Special - Browser Node Descriptions"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
 	If oDoc.DocumentType = 12291 Then 'kAssemblyDocumentObject
 		'Set display name of active document
 		ThisDoc.Document.DisplayName=iProperties.Value(oDoc, "Project", "Part Number") & " | " & iProperties.Value(oDoc, "Project", "Description") & " | "

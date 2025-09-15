@@ -5,6 +5,10 @@ Dim oCommandMgr As CommandManager = ThisApplication.CommandManager
 Dim oRefOLE As ReferencedOLEFileDescriptors = oDoc.ReferencedOLEFileDescriptors
 'If there are selected components we can do something, otherwise we're done
 
+	SharedVariable("LogVar") = "Special - LTC Deck Fix"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+
+
 If comps.count > 0 Then   
 
 numParts = comps.count

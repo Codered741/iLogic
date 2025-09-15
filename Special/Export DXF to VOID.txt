@@ -1,4 +1,7 @@
-﻿'declarations
+﻿	SharedVariable("LogVar") = "Special - Export DXF to VOID"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+
+'declarations
 	Dim oAsmDoc as Document
 	Dim compOcc as ComponentOccurrence
 	customPropertySet = ThisDoc.Document.PropertySets.Item("Inventor User Defined Properties")

@@ -10,7 +10,7 @@
 Sub Main()
 	Dim TTParamsOPS As New List(Of String)
 	
-	SharedVariable("LogVar") = "Update OPS"
+	SharedVariable("LogVar") = "Special - Update OPS"
 	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
 
 	'Operations Parameters

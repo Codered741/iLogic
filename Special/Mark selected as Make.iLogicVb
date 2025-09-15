@@ -7,6 +7,9 @@ Dim oCompDef As ComponentDefinition = oDoc.ComponentDefinition
 oMyParameter=oCompDef.Parameters.UserParameters
 'If there are selected components we can do something, otherwise we're done
 
+	SharedVariable("LogVar") = "Mark selected as Make"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+
 If comps.count > 0 Then   
 
 numParts = comps.count

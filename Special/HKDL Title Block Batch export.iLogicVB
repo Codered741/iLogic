@@ -1,3 +1,4 @@
+
 'AUTHOR: Cody Redding
 'CONTACT: codered741@gmail.com
 
@@ -15,6 +16,9 @@ AddReference "C:\Program Files\PDFCreator\PDFCreator.ComWrapper.dll"
 Imports pdfforge.PDFCreator.UI.ComWrapper
 	
 Sub Main()
+	
+	SharedVariable("LogVar") = "Special - HKDL Title Block Batch export"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
 	
 	On Error GoTo errhandle
 	

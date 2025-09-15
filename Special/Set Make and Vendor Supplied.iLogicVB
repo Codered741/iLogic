@@ -3,6 +3,9 @@ Dim comps As SelectSet = oDoc.SelectSet
 Dim comp As ComponentOccurrence
 'If there are selected components we can do something, otherwise we're done
 
+	SharedVariable("LogVar") = "Special - Set Make and Vendor Supplied"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
 If comps.count > 0 Then   
 
 numParts = comps.count

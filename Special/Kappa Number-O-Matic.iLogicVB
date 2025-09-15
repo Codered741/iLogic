@@ -1,6 +1,11 @@
 AddReference "Microsoft.Office.Interop.Excel"
 
 Sub Main()
+
+	SharedVariable("LogVar") = "Special - Kappa Number-O-Matic"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
+	
 	Dim oDoc as Document
 	Dim Workbook As String = "R:\DISNEY PROJECT KAPPA - 17-A-0059\X-REF MASTER FILES\Disney Part Numbers.xlsx"
 	Dim SheetName As String

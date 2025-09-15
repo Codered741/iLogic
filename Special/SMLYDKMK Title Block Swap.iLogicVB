@@ -12,6 +12,9 @@ Imports My.Computer.FileSystem
 	
 Sub Main()
 
+	SharedVariable("LogVar") = "Special - SMLYDKMK Title Block Swap"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
 	On Error Resume Next 'GoTo errhandle
 	
 	'read in the path to the templates and test that it Exists
