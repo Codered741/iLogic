@@ -1,5 +1,6 @@
 ﻿'AUTHOR: Cody Redding
 'CONTACT: Codered741@gmail.com
+Imports System.Globalization
 
 Sub Main()
 	'Declarations
@@ -121,7 +122,7 @@ Sub Main()
 	
 	'Write header info to log if access to log is enabled
 	If noWrite = False Then
-		oAppend.Write(ThisApplication.UserName & "," & DateTime.Now.ToString("G") & "," & DocumentFileNameExt(oDoc) & ",")
+		oAppend.Write(ThisApplication.UserName & "," & DateTime.Now.ToString("G", New CultureInfo("en-US")) & "," & DocumentFileNameExt(oDoc) & ",") '"MM/dd/yyyy hh:mm:ss tt"
 	End If
 	
 	'/////////////////////////////////////////////////////// Checks for correct formatting
