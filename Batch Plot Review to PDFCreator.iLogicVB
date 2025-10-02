@@ -1,4 +1,4 @@
-Imports System.IO
+﻿Imports System.IO
 Imports System.IO.File
 'Imports System.IO.Path
 'Imports System.Collections
@@ -29,7 +29,7 @@ Sub Main()
 	
 	'create access to Batch Plot log
 	Dim oAppend As System.IO.StreamWriter
-	Dim oFile As String = "Z:\Inventor Data\BPLog.log"
+	Dim oFile As String = "C:\_vaultWIP\BPLog.log"
 	Dim noWrite as Boolean = False
 	
 	'try getting access to log, disable CSV output if access cannot be gained.  
