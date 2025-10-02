@@ -17,21 +17,25 @@ Imports pdfforge.PDFCreator.UI.ComWrapper
 
 Sub Main()
 
-Dim oDoc As Document = ThisApplication.ActiveDocument
+	'write to iLogic Log
+	SharedVariable("LogVar") = "Batch Plot to PDFCreator" 
+	iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")
+		
+	Dim oDoc As Document = ThisApplication.ActiveDocument
 
-'deactivate the Vault Addin to reduce the number of prompts.
-	Dim VaultAddin As Inventor.ApplicationAddIn = ThisApplication.ApplicationAddIns.ItemById("{48B682BC-42E6-4953-84C5-3D253B52E77B}")
+	'deactivate the Vault Addin to reduce the number of prompts.
+	Dim VaultAddin As Inventor.ApplicationAddIn = GetAddinByByName("Inventor Vault") 'ThisApplication.ApplicationAddIns.ItemById("{48B682BC-42E6-4953-84C5-3D253B52E77B}")
 	VaultAddin.Deactivate()
 
-'check if active document is an assembly
+	'check if active document is an assembly
 		If isAsm(oDoc) = False
 			MsgBox("Please run from an Assembly")
 			VaultAddin.Activate
 			Return
 		End If
 
-'get user confirmation on items before starting
-'this will take a while
+	'get user confirmation on items before starting
+	'this will take a while
 	Dim usrTimeAck = MessageBox.Show("This rule will find all drawings of parts referenced in the BOM, print them to PDF's and merge them to a single document.  "  _
 		& vbLf & "This process can take some time to run, and cannot be stopped once started.  ", "Time Warning", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning)
 		
@@ -80,11 +84,6 @@ Dim oDoc As Document = ThisApplication.ActiveDocument
 		
 	'begin the Batch Plot process
 	Try 
-		
-		
-		'write to iLogic Log
-		SharedVariable("LogVar") = "Batch Plot to PDFCreator" 
-		iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")
 		
 		'Start Stream output, user name and date stamp
 		' If Not noWrite = True Then
@@ -462,6 +461,14 @@ Function isAsm(ThisDoc As Document) As Boolean
 	End If
 End Function 'isAsm
 
+Function GetAddinByByName(displayName As String) As Inventor.ApplicationAddIn
+    For Each i As Inventor.ApplicationAddIn In ThisServer.ApplicationAddIns
+        If i.DisplayName = displayName Then
+            Return i
+        End If
+    Next
+    Return Nothing
+End Function
 
 
 'NEW FORM TM ADDED 2025-08-07:
@@ -500,7 +507,7 @@ Public Class GatherModeForm
 			'.ReadOnly = True
 			'.BorderStyle = None
 		'End With
-Dim oRb1 As New RadioButton()
+		Dim oRb1 As New RadioButton()
 		With oRb1
 			.Text = "Bill of Materials" & Chr(10) & "This method will include drawings of BoM items only (Normal, Purchased and Inseperable)"  & Chr(10) & "(This is the 'classic' version of this iLogic script)"
 			.Top = 12
