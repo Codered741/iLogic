@@ -1,0 +1,84 @@
+﻿Sub Main()
+
+Dim oDrawDoc As DrawingDocument
+  oDrawDoc = ThisApplication.ActiveDocument
+  
+  '-----------------GET SELECTION SET----------------
+    
+   Dim oSelectSet As SelectSet
+   oSelectSet = oDrawDoc.SelectSet
+   Dim colDimensions As New Collection
+   Dim i As Long
+   If oSelectSet.Count = 0
+	   MessageBox.Show("Select all dimension you want to edit before running this rule", "Select Drawings First")
+	   GoTo EndofMain
+   eND iF
+      
+   'Adding the selected dimensions to a collection so we can retrieve the dimensions later
+   For i = 1 To oSelectSet.Count
+      If TypeOf oSelectSet.Item(i) Is DrawingDimension Then
+        colDimensions.Add(oSelectSet.Item(i))
+      End If
+   Next
+   
+'--------------ADJUST PRECISION---------------
+   
+   Dim PrcArray(0, 5) As String
+	PrcArray(0, 0) = "DON'T MODIFY                  "
+	PrcArray(0, 1) = "0"
+	prcArray(0, 2) = "1"
+	PrcArray(0, 3) = "2"
+	PrcArray(0, 4) = "3"
+	PrcArray(0, 5) = "4"
+Dim pickvalues = New List(Of String)
+For x = 0 To PrcArray.GetUpperBound(1)
+		pickvalues.Add(PrcArray(0, x))
+Next
+Dim PrcChoice As String = InputListBox("Choose whether to update the number of decimal places", pickvalues.ToArray(), PrcArray(0, 0), Title := "Change Precision?", ListName := "----------------------------------------------------")
+If PrcChoice = PrcArray(0,0) Then GoTo NoPrcChange
+   
+    
+    For Each oDimension As DrawingDimension In colDimensions
+        Dim oGeneralDim As LinearGeneralDimension 'this is for dimension style
+        oGeneralDim = oDimension
+        oGeneralDim.Precision = CInt(PrcChoice)
+    Next
+	
+NoPrcChange :
+
+'----------------MAKE REFERENCE?------------------
+
+
+   Dim TypeArray(0, 2) As String
+	TypeArray(0, 0) = "DON'T MODIFY                  "
+	TypeArray(0, 1) = "DEFAULT"
+	TypeArray(0, 2) = "REFERENCE"
+Dim Typevalues = New List(Of String)
+For x = 0 To TypeArray.GetUpperBound(1)
+		Typevalues.Add(TypeArray(0, x))
+Next
+
+Dim RefChoiceBlurb As String = "Would you like to set the dimension type to Reference (shown In brackets)" & vbCrLf & "(Ref dims should be used For dimensions of stock material, or to avoid double-dimensioning)"
+Dim RefChoice As String = InputListBox(RefChoiceBlurb, Typevalues.ToArray(), TypeArray(0, 0), Title := "Change Reference?", ListName := "----------------------------------------------------------------------------------------------------------------------")
+
+If RChoice = TypeArray(0,1)
+	    For Each oDimension As DrawingDimension In colDimensions
+        Dim oGeneralDim As LinearGeneralDimension 'this is for dimension style
+        oGeneralDim = oDimension
+		oGeneralDim.Tolerance.SetToDefault
+		Next
+	End If
+If RefChoice = TypeArray(0,2)
+	    For Each oDimension As DrawingDimension In colDimensions
+        Dim oGeneralDim As LinearGeneralDimension 'this is for dimension style
+        oGeneralDim = oDimension
+		oGeneralDim.Tolerance.SetToReference
+		Next
+	End If
+	
+EndofMain :
+
+End Sub
+
+'Adding notes
+        'oDimension.Text.FormattedText = vbNewLine & "(See notes section)"
