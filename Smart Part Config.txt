@@ -390,10 +390,10 @@ Sub Main()
 	oCompDef.BOMQuantity.SetBaseQuantity(BOMQuantityTypeEnum.kEachBOMQuantity)
 	
 	'run rule to fill values for machining estimation
-	If ThisApplication.UserName = "Cody Redding" Then
-		iLogicVb.RunExternalRule("Time Estimate.iLogicVb") 'not ready for primetime
-		'MsgBox("You are AWESOME!")
-	End If
+	' If ThisApplication.UserName = "Cody Redding" Then
+		' iLogicVb.RunExternalRule("Time Estimate.iLogicVb") 'not ready for primetime
+		' 'MsgBox("You are AWESOME!")
+	' End If
 	
 	'Save Document
 	ThisDoc.Save
