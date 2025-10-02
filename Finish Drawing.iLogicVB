@@ -75,7 +75,7 @@ Sub Main()
 		Exit Sub
 	End If
 	
-
+	oDoc.Close
 	
 	'ThisApplication.ActiveDocument.Close
 	
