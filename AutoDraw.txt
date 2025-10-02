@@ -43,6 +43,8 @@ Sub Main()
 			TemplateList.Add("Universal SM Hollywood")
 			TemplateList.Add("Universal SM Florida")
 			TemplateList.Add("TAIT UK")
+			TemplateList.Add("DISN PORTER")
+			
 			
 			'Prompt user to select template
 			uTemp = InputListBox("Please select the template you would like to use: ", TemplateList, TemplateList(0), Title:= "Select Template", ListName := "Available Templates")
@@ -67,6 +69,8 @@ Sub Main()
 					Template = strTemplatesPath + "Universal\US_FLORIDA\_USF_STANDARD TEMPLATE_SIZE B_11x17.dwg"
 				Case TemplateList(5)
 					Template = strTemplatesPath + "Metric\UK TEST BORDER.dwg"
+				Case TemplateList(6)
+					Template = strTemplatesPath + "Disney\160398 PORTER DRAWING - INCH.dwg"		
 			End Select
 
 			'prompt user to auto scale
