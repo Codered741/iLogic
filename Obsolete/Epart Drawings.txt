@@ -1,4 +1,0 @@
-Filepath = ("S:\INVENTORY\E-WORLD\" & iProperties.Value("Project", "Part Number") & " - " & iProperties.Value("Project", "Description") & " rev"  & iProperties.Value("Project", "Revision Number"))
-ThisDoc.Document.SaveAs((Filepath & Filename & ".pdf")  , True)
-ThisDoc.Document.SaveAs((Filepath & Filename & ".Dwg")  , True)
-ThisDoc.Document.SaveAs((Filepath & Filename & ".dxf")  , True)

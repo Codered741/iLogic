@@ -1,2 +1,0 @@
-﻿ThisDoc.Document.SaveAs("S:\INVENTORY\E-WORLD\" & ThisDoc.FileName(False) & " - " & iProperties.Value("Project", "Description") & " rev" & iProperties.Value("Project", "Revision Number") & ".pdf" , True)
-MessageBox.Show("Files Created", "Success")
