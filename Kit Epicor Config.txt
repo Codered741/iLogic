@@ -1,19 +1,50 @@
-﻿Sub Main()
+﻿Imports System.Globalization
+
+Sub Main()
 	Dim oDoc As Document = ThisApplication.ActiveDocument
 	Dim Fail As boolean = False
-	Dim oCreateDate As Date = DateString
+
+	'Dim oCreateDate As Date = DateTime.Now.ToString("G", New CultureInfo("en-ISO"))  'DateString
+	Dim oCreateDate As Date = DateTime.Now.ToString("o")
+	'msgbox(oCreateDate)	
 	
 	SharedVariable("LogVar") = "Kit Epicor Config"
 	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
 	
 	If oDoc.DocumentType = kAssemblyDocumentObject Then
+		
+		Dim pAddTry As Integer = 0	
+		
+		Start:
+		Try
+			test = iProperties.Value("Custom", "DesignLevel")
+			test = Parameter("DesignLevel")
+			test = iProperties.Value("Custom", "JobNum")
+			test = iProperties.Value("Custom", "DETAILER")
+			test = iProperties.Value("Custom", "Element_Desc")
+		Catch
+			iLogicVB.RunExternalRule("Kit Property Add.txt")
+			MessageBox.Show("Properties were added, please check your entries!", "Epicor Job Config", MessageBoxButtons.OK)
+			
+			pAddTry = pAddTry + 1
+			
+			If pAddTry <2 Then
+				Goto Start
+			Else
+				MessageBox.Show("A loop was detected.  Exiting.  ", "Prop Add Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+				Exit Sub
+			End If
+			
+		End Try
+		
+		
 		If Parameter("DesignLevel") <> "Stock" AndAlso Len(iProperties.Value("Project", "Part Number")& "-" & iProperties.Value("Project", "Description")) > 50 then
 			
 			Select Case Parameter("DesignLevel")
 				Case "Kit"
-					pnLengthAllow = 12
+					pnLengthAllow = 14 'allows 3 digit element and 3 digit Kit with two '-'
 				Case "Element"
-					pnLengthAllow = 9
+					pnLengthAllow = 10 'allows 3 digit kit, plus '-'
 				Case "Show"
 					pnLengthAllow = 6
 				Case Else

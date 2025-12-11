@@ -17,6 +17,10 @@ Sub Main()
 	Dim oDoc as Document = ThisApplication.ActiveDocument
 	Dim FileNameMinLong as Integer = 21 'c:/_vaultWIP/Designs/ is 21 characters.  
 	
+	iLogicForm.CloseGlobal("General Utilities")
+	iLogicForm.CloseGlobal("Smart Part Config")
+	iLogicForm.CloseGlobal("Epicor Job Config")
+	
 	'check if active document is an assembly
 	If isAsm(oDoc) = False
 		MsgBox("Please run from an Assembly")
@@ -32,7 +36,7 @@ Sub Main()
 	Dim BOMDocs As New List(of String)
 
 	'get list of part numbers from Structured BOM
-	GetDocsFromBOM(ThisApplication.ActiveDocument, BOMDocs)
+	GetDocsFromBOM(oDoc, BOMDocs)
 	
 	
 	 Dim oProgressBar as Inventor.ProgressBar
@@ -103,20 +107,40 @@ Sub Main()
 	
 		If SharedVariable("BatchPlotInvoke") = False
 			usrOpenDwgs = MessageBox.Show(lstDrawings.Count & " drawings were found that appear to be out of date.  Would you like to open them?", "Drawing Update Check", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+			oCommandMgr = ThisApplication.CommandManager
+			
 		Else
 			MessageBox.Show(lstDrawings.Count & " drawings were found that appear to be out of date. ", "Drawing Update Check", MessageBoxButtons.OK, MessageBoxIcon.Question)
 			usrOpenDwgs = vbNo
 		End If
 		
 		If usrOpenDwgs = vbYes Then
-		
-			Dim oOptions as NameValueMap = ThisApplication.TransientObjects.CreateNameValueMap
-			oOptions.Value("DeferUpdates") = False
-			oOptions.Value("FastOpen") = False
-			
-			For Each Dwg in lstDrawings
-				ThisApplication.Documents.OpenWithOptions(Dwg, oOptions, True)
-			Next
+			usrCloseDwgs = MessageBox.Show("Would you like to to automatically update and close the drawings WITHOUT checking them?", "Drawing Update Check", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+				Dim oOptions as NameValueMap = ThisApplication.TransientObjects.CreateNameValueMap
+				oOptions.Value("DeferUpdates") = False
+				oOptions.Value("FastOpen") = False
+				
+				For Each Dwg in lstDrawings
+					dwgDoc = ThisApplication.Documents.OpenWithOptions(Dwg, oOptions, True)
+					If usrCloseDwgs = vbYes Then
+						'CommandManager VaultCheckoutTop
+						oCommandMgr.ControlDefinitions.Item("VaultCheckout").Execute
+						'Update Drawing
+						dwgDoc.Update
+						dwgDoc.Sheets.Item(1).Activate
+						Try 
+							dwgDoc.Save
+						Catch 
+							MessageBox.Show("Unable to save the drawing " & dwg & " This drawing will remain open for manual update and saving.  ", "File Save Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+							Goto FSErr
+						End Try
+						'CommandManager VaultCheckIn
+						oCommandMgr.ControlDefinitions.Item("VaultCheckIn").Execute2(false)
+						System.Windows.Forms.SendKeys.SendWait(Chr(9) & vbCrLf)
+						dwgDoc.Close(false)	
+	FSErr:						
+					End If
+				Next
 			
 		End If
 	Else 

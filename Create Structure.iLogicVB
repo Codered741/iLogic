@@ -1,7 +1,10 @@
 ﻿'TAIT Showfile Structure Creator
 'Purpose:
 '  To maintain consistency in show data management, this rule will create folder structure in the Showfile and store this folder path in an iProperty for future use.  It will also create an assembly, pre-configured with the correct Element/Kit information, and insert it into the current Show/Element assembly.  
-'  For Shows, the rule will create elements
+'  In Creating a show, the rule will create a show folder, named "SHOW NAME XXXX - 12X3456", with a show assembly inside.  
+		'The show assembly will be named the Job number, XXXXXX.iam, with the description "MASTER ASSEMBLY"
+		
+'  For Shows, the rule will create a Show Assembly, 
 '  For Elements, the rule will create kits
 '  For kits, the rule will error. 
 
@@ -23,7 +26,7 @@ Sub Main()
 	'messagebox.show(strTemplatesPath)
 	If strTemplatesPath.Length = 0 Then
 		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-		Exit sub
+		Exit Sub
 	End if
 	
 	If Not ThisApplication.ActiveEditDocument Is ThisApplication.ActiveDocument Then
@@ -40,7 +43,7 @@ Sub Main()
 		Exit Sub
 	End If
 	
-	usrContinue = MessageBox.Show("This will create a new Show/Element/Kit assembly and  corresponding folder structure.  Are you sure you are ready to continue? ", "Continue?", MessageBoxButtons.OKCancel, MessageBoxIcon.Question)
+	usrContinue = MessageBox.Show("This will create a new Show/Element/Kit assembly and corresponding folder structure.  Are you sure you are ready to continue? ", "Continue?", MessageBoxButtons.OKCancel, MessageBoxIcon.Question)
 	If Not usrContinue = vbOK Then
 		MsgBox("Canceling")
 		Exit Sub
@@ -53,55 +56,56 @@ Sub Main()
 		pDL = oCustProps.Item("DesignLevel")
 	'catch non-existant property
 	Catch
-			'add DesignLevel property
-			oCustProps.Add("", "DesignLevel")
-			pDL = oCustProps.Item("DesignLevel")
-			Err.Clear
+		'add DesignLevel property
+		oCustProps.Add("", "DesignLevel")
+		pDL = oCustProps.Item("DesignLevel")
+		Err.Clear
 	End Try
+	
+	Try
+		temp = oCustProps.Item("AutoStruct").Value
+	Catch
+		fix = MessageBox.Show("This assembly was not created with the correct rule. If you have correctly completed 'Epicor Job Config', you can correct this now by selecting 'Yes'.  " & _
+		vbCr & "Are you sure Epicor Job Config is Correct?", "Auto Assembly Failure", MessageBoxButtons.YesNo, MessageBoxIcon.Error)
+		
+		If fix = vbYes Then
+			oCustProps.Add(True, "AutoStruct")
+		Else
+			MsgBox("Exiting")
+			Exit Sub
+		End if
+		
+	End Try
+	
 	
 	'handle shows and elements differently, if not configured, create show.  
 	If pDL.Value = "Show" 'create Elements
-	
-		Try
-			If oCustProps.Item("AutoStruct").Value = True Then
-				CreateElement(oDoc, strTemplatesPath)
-			End If
-		Catch
-			MessageBox.Show("This show was not created with the correct rule.  Please contact #help_inventor for assistance", "Show not Auto Assembly", MessageBoxButtons.OK, MessageBoxIcon.Error)
-			Exit Sub
-		End Try
 		
-		If Err.Number <> 0 Then 
-			MessageBox.Show("An Error has occurred, please try again.  ", "Create Element Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		If oCustProps.Item("AutoStruct").Value = True Then
+			CreateElement(oDoc, strTemplatesPath)
 		End If
 		
 	Else If pDL.Value = "Element" Then 'Create Kits
-	
-		Try
-			If oCustProps.Item("AutoStruct").Value = True Then
-				CreateKit(oDoc, strTemplatesPath)
-			End If
-		Catch
-			MessageBox.Show("This Element was not created with the correct rule.  Please contact #help_inventor for assistance", "Element not Auto Assembly", MessageBoxButtons.OK, MessageBoxIcon.Error)
-			Exit Sub
-		End Try 
-		
-		If Err.Number <> 0 Then 
-			MessageBox.Show("An Error has occurred, please try again.  ", "Create Kit Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+
+		If temp = oCustProps.Item("AutoStruct").Value = True Then
+			CreateKit(oDoc, strTemplatesPath)
 		End If
 		
 	Else If pDL.Value = "Kit" Then
 	
 		MessageBox.Show("Element/Kit creation can only be done from configured Show/Element Assembly.  Please check your Config, or open a Show/Element.  ", "Show/Element Only", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		
 	Else 
+	
 		usrCreateShow = MessageBox.Show("Do you want to create a show?", "Create Show?", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
 		If usrCreateShow = vbYes Then
-			'show create subroutine
+			'show create Subroutine
 			CreateShow(strTemplatesPath)
 		Else
 			MsgBox("Nothing left to do!" & vbLf & "¯\_(ツ)_/¯")
 			Exit Sub
 		End If
+		
 	End If
 	
 	If Err.Number <> 0 Then 
@@ -113,22 +117,26 @@ End Sub
 
 'SUBROUTINES \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 Sub CreateShow(strTemplatesPath as String)
-	'get showfile folder - GetShowFilePath subroutine
+	'get showfile folder - GetShowFilePath Subroutine
 	'Dim sfPath as String = GetShowFilePath   'Remove references to Show File
 	
 	showNum:
 	'get job number from user = JOBNUMBER
-	Dim ShowNumber As String = InputBox("Please enter the Base 6 digit Epicor Job Number. " & vbLf & "e.g. 123456", "Job Number", "")
+	Dim ShowNumber As String = InputBox("Please enter the Base 6 digit Epicor Job Number. " & vbLf & "e.g. 123456", "Job Number", "XXXXXX")
+	
+	If ShowNumber = "" Then
+		MsgBox("Canceling")
+		Exit Sub
+	Else If Not ShowNumber.Length = 6 Then
+		MessageBox.Show("The Show Number must be 6 digits.  ", "Show Number Length", MessageBoxButtons.OK)
+		GoTo showNum
+	End If		
 	
 	If Not Int32.TryParse(ShowNumber, 000000) Then 'ShowNumber.Length = 6 Then
 		MsgBox("The Show Number must be an integer.  ")
 		GoTo showNum
 	End If
-	
-	If Not ShowNumber.Length = 6 Then
-		MsgBox("The Show Number must be 6 digits.  ")
-		GoTo showNum
-	End If
+
 	'create folder in WIP
 	'$\PROJECTNAME - PROJECTNUMBER
 	Dim ShowName As String = InputBox("Please enter the show name.  ", "Show Name", "").ToUpper 
@@ -161,6 +169,8 @@ Sub CreateShow(strTemplatesPath as String)
 	oShowAsm.Update
 	oShowAsm.Save
 	
+	SetUnits(oShowAsm)
+	
 	MessageBox.Show("The Show was created successfully. " & vbLf & ShowNumber & vbLf & ShowName & vbLf & pID , "Show Created", MessageBoxButtons.OK)
 	
 End Sub 'CreateShow
@@ -174,20 +184,26 @@ Sub CreateElement(doc As AssemblyDocument, strTemplatesPath as String)
 	eDesc:
 	Dim elementDesc As String = InputBox("Enter Element Description Only - No extra dashes or spaces", "Element Description", "").ToUpper
 
+'	If elementDesc - "" Then
+'		Return
+'	End If
+
 	If elementDesc.Length > 37 OrElse elementDesc.Length < 2 Then
 		MsgBox("Description must be between 2 and 37 characters.  Try again")
 		GoTo eDesc
 	End If
 
 	eNumber:
-	Dim elementNum As String = InputBox("Enter Element Number Only - No extra dashes or spaces", "Element Number", "")
+	Dim elementNum As String = InputBox("Enter Element Number Only - No extra dashes or spaces.  2-3 digits. ", "Element Number", "XXX")
 	
-	If Not elementNum.Length = 2 Then 
-		MsgBox("Element Number must be two digits.  Try Again.  ")
+	If elementNum = "" Then
+		MsgBox("Canceling")
+		Exit Sub
+	Else If Not elementNum.Length  <4 Then 
+		MessageBox.Show("Element Number must be three digits or less.  Try Again.  ", "Element Number Length", MessageBoxButtons.OK)
 		GoTo eNumber
 	End If
 
-	
 	If Not Int32.TryParse(elementNum, 00) Then
 		MsgBox("Element Number must be an integer. Try Again.  ")
 		Err.Clear
@@ -231,6 +247,9 @@ Sub CreateElement(doc As AssemblyDocument, strTemplatesPath as String)
 	oElementAsm.DisplayName = elementNum & " - " & elementDesc.ToUpper
 	
 	oElementAsm.Update
+	
+	SetUnits(oElementAsm)
+	
 	oElementAsm.Save
 	oElementAsm.Close
 	
@@ -259,21 +278,26 @@ Sub CreateKit(doc As AssemblyDocument, strTemplatesPath As string)
 	kDesc:
 	Dim kitDesc As String = InputBox("Enter Kit Description - No extra dashes or spaces", "Kit Description", "").ToUpper
 	
+'	If kitDesc - "" Then
+'		Return
+'	End If
+	
 	If kitDesc.Length > 37 OrElse kitDesc.Length < 3 Then
 		MsgBox("Description must be between 3 and 37 characters.  Try again")
 		GoTo kDesc
 	End If
 
 	kNumber:
-	Dim kitNum As String = InputBox("Enter Kit Number - No extra dashes or spaces", "Kit Number", "")
-
-	If Not kitNum.Length < 4 Then 
-		MsgBox("Kit Number too long.  Try Again.  ")
+	Dim kitNum As String = InputBox("Enter Kit Number - No extra dashes or spaces.  2-3 digits. ", "Kit Number", "XXX")
+	
+	If kitNum = "" Then
+		MsgBox("Canceling")
+		Exit Sub
+	Else If Not kitNum.Length < 4 Then 
+		MessageBox.Show("Kit Number too long.  Try Again.  ", "Kit Number Length", MessageBoxButtons.OK)
 		GoTo kNumber
 	End If
-	
-	'num = CInt(kitNum)
-	
+
 	If Not Int32.TryParse(kitNum, 00) Then
 		MsgBox("Kit Number must be an integer. Try Again.  ")
 		Err.Clear
@@ -298,7 +322,7 @@ Sub CreateKit(doc As AssemblyDocument, strTemplatesPath As string)
 	
 	Dim oTG As TransientGeometry = ThisApplication.TransientGeometry
 	Dim oMatrix As Matrix = oTG.CreateMatrix
-	
+
 	doc.Activate()
 	
 	Dim okitOcc As ComponentOccurrence = doc.ComponentDefinition.Occurrences.Add(okitAsm.FullFileName, oMatrix)
@@ -308,6 +332,9 @@ Sub CreateKit(doc As AssemblyDocument, strTemplatesPath As string)
 	okitAsm.DisplayName = kitNum &  " - " & kitDesc.ToUpper
 	
 	okitAsm.Update
+	
+	SetUnits(okitAsm)
+	
 	okitAsm.Save
 	okitAsm.Close
 	
@@ -356,6 +383,7 @@ Private Sub SetProps(oAsm As AssemblyDocument, Project As String, Description As
 	Catch 
 		oShowCustProps.Add(True, "AutoStruct")
 	End Try
+	
 	oShowCustProps.Item("AutoStruct").Value = True
 	
 End Sub
@@ -423,3 +451,19 @@ Function getTemplatesFolderPath () as string
 	End if
 	
 End Function
+
+Sub SetUnits(doc as Document)
+
+	bool = InputRadioBox("Select Units", "Imperial", "Metric", True, Title := "Units Selection")
+	
+	oUOM = doc.UnitsOfMeasure'.MassUnits = 11283
+	
+	If bool =  False Then 'Set Metric Units
+		oUOM.MassUnits = 11283 'UnitsTypeEnum.kKilogramMassUnits
+		oUOM.LengthUnits = 11269 'UnitsTypeEnum.kMillimeterLengthUnits
+	Else
+		oUOM.MassUnits = 11286 'UnitsTypeEnum.kLbMassMassUnits
+		oUOM.LengthUnits = 11272 'UnitsTypeEnum.kInchLengthUnits
+	End If
+	
+End Sub 'SetUnits

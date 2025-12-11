@@ -23,23 +23,23 @@ Sub Main()
 	End If
 	
 	Dim oCommandMgr As CommandManager = ThisApplication.CommandManager
-	Dim oRefDocs As DocumentsEnumerator = oDoc.AllReferencedDocuments
-	Dim oRefDoc As Document = oRefDocs.Item(1)
-	Dim makeDxf AS Boolean = False
-	Dim notDone as Boolean = False
+	' Dim oRefDocs As DocumentsEnumerator = oDoc.AllReferencedDocuments
+	' Dim oRefDoc As Document = oRefDocs.Item(1)
+	' Dim makeDxf AS Boolean = False
+	' Dim notDone as Boolean = False
 	
 	'If the first reference is not a part or assembly, find the first assembly/part in the list.  
-	If oRefDoc.DocumentType <> kAssemblyDocumentObject OrElse oRefDoc.DocumentType <> kPartDocumentObject 
-		For docnum = 2 to oDoc.AllReferencedDocuments.Count ' oRefDoc.DocumentType <> kAssemblyDocumentObject OrElse oRefDoc.DocumentType <> kPartDocumentObject
-			oRefDoc = oDoc.AllReferencedDocuments.Item(docnum)
-			If oRefDoc.DocumentType = kAssemblyDocumentObject OrElse oRefDoc.DocumentType = kPartDocumentObject
-				Exit For
-			End If
-		Next
-	End If
+	' If oRefDoc.DocumentType <> kAssemblyDocumentObject OrElse oRefDoc.DocumentType <> kPartDocumentObject 
+		' For docnum = 2 to oDoc.AllReferencedDocuments.Count ' oRefDoc.DocumentType <> kAssemblyDocumentObject OrElse oRefDoc.DocumentType <> kPartDocumentObject
+			' oRefDoc = oDoc.AllReferencedDocuments.Item(docnum)
+			' If oRefDoc.DocumentType = kAssemblyDocumentObject OrElse oRefDoc.DocumentType = kPartDocumentObject
+				' Exit For
+			' End If
+		' Next
+	' End If
 	
-	invDesignInfo = oRefDoc.PropertySets.Item("Design Tracking Properties")
-	oRefCustomProps = oRefDoc.PropertySets.Item("Inventor User Defined Properties")
+	' invDesignInfo = oRefDoc.PropertySets.Item("Design Tracking Properties")
+	' oRefCustomProps = oRefDoc.PropertySets.Item("Inventor User Defined Properties")
 	'oRefSumProps = oRefDoc.PropertySets.Item("Design Tracking Properties")
 	
 	'DateProp = invDesignInfo.Item("Creation Time")
@@ -75,9 +75,7 @@ Sub Main()
 		Exit Sub
 	End If
 	
-
-	
-	'ThisApplication.ActiveDocument.Close
+	ThisApplication.ActiveDocument.Close
 	
 ErrorHandler:
 	notDone = True

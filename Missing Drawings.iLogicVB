@@ -5,6 +5,7 @@
 'LICENSE: Free to redistribute without authorization
 
 'FUNCTION: Create a report of all "Make" parts that are missing drawings
+Imports System.IO
 
 Sub Main()
 
@@ -48,7 +49,7 @@ Sub MissingDrawings()
 		& vbLf & " Drawings may exist in the Vault, but will not be counted in this operation.  See a Vault Admin for assistance. " _
 		& vbLf & " " _
 		& vbLf & "Are you sure you want to create this report for all of the assembly components?" _
-		& vbLf & "This operation could take some time.", "iLogic  - Batch Output TXT ", MessageBoxButtons.YesNo)
+		& vbLf & "This operation could take some time.", "Find Missing Drawings ", MessageBoxButtons.YesNo)
 	
 	' If RUsure = vbNo Then
 		' Exit Sub
@@ -57,45 +58,90 @@ Sub MissingDrawings()
 	oAppend.WriteLine ("Report created - " & DateString & ":" & TimeString)  '& " by " & ThisApplication.UserName)
 	'oAppend.Flush()
 	
-	dwgPathName = FindDrawingFile(oAsmDoc)
+	dwgPathName = FindDrawingFilePN(oAsmDoc)
 	
 	If dwgPathName = "" Then 
 		PrtsMissingDwgs.Add(oAsmDoc.FullDocumentName)
 		bFoundFile = True
 		
 	Else
-		'oAppend.WriteLine("FOUND : " & dwgPathName & " FOR : " & oRefDoc.FullDocumentName)
-	End If
-				
-	'work the the drawing files for the referenced models
-	'this expects that the model has a drawing of the same name
-	For Each oRefDoc In oRefDocs
-		If oRefDoc.DocumentType = kPartDocumentObject OrElse oRefDoc.DocumentType = kAssemblyDocumentObject Then
+			'oAppend.WriteLine("FOUND : " & dwgPathName & " FOR : " & oRefDoc.FullDocumentName)
+	End If	
+
+	Dim BOMDocs As New List(of String)
+
+	'get list of part numbers from Structured BOM
+	GetDocsFromBOM(oAsmDoc, BOMDocs)
+	
+	For Each BOMDoc as String In BOMDocs
+	
+		bDoc = ThisApplication.Documents.ItemByName(BOMDoc) 'convert full file name to document object
+
+		'Attempt to find a drawing file of the same name as the model doc
+		RefDwgFullFileName = FindDrawingFilePN(bDoc)			
+			
+		If bDoc.DocumentType = kPartDocumentObject OrElse bDoc.DocumentType = kAssemblyDocumentObject Then
+		
 			' Dim props as PropertySet
-			props = oRefDoc.PropertySets.Item("Inventor User Defined Properties")
+			props = bDoc.PropertySets.Item("Inventor User Defined Properties")
 			
 			Try 
+				'Test if the MakeBuy property exists
 				MBProp = props.Item("MakeBuy")
 				
 				If MBProp.Value = "Make" Then
-				'check to see that the model has a drawing in the project workspace
-				dwgPathName = FindDrawingFile(oRefDoc)
 				
-				If dwgPathName = "" Then 
-					PrtsMissingDwgs.Add(oRefDoc.FullDocumentName)
-					bFoundFile = True
-				Else 
-					'oAppend.WriteLine("FOUND : " & dwgPathName & " FOR : " & oRefDoc.FullDocumentName)
+					'check to see that the model has a drawing in the project workspace
+					dwgPathName = FindDrawingFilePN(bDoc)
+				
+					If dwgPathName = "" Then 
+'add windows search for duplicates
+						PrtsMissingDwgs.Add(bDoc.FullDocumentName)
+						bFoundFile = True
+					End If
+					
 				End If
-			End If
+				
 			Catch
 			
-				'oAppend.WriteLine("MAKE-BUY PROPERTY NOT FOUND : " & oRefDoc.FullDocumentName)
-				PrtsMissingMB.Add(oRefDoc.FullDocumentName)
+				PrtsMissingMB.Add(bDoc.FullDocumentName)
 				bFoundFile = True
+				
 			End Try
+		
 		End If
+		
 	Next
+	
+	'work the the drawing files for the referenced models
+	'this expects that the model has a drawing of the same name
+	' For Each oRefDoc In oRefDocs
+		' If oRefDoc.DocumentType = kPartDocumentObject OrElse oRefDoc.DocumentType = kAssemblyDocumentObject Then
+			' ' Dim props as PropertySet
+			' props = oRefDoc.PropertySets.Item("Inventor User Defined Properties")
+			
+			' Try 
+				' MBProp = props.Item("MakeBuy")
+				
+				' If MBProp.Value = "Make" Then
+				' 'check to see that the model has a drawing in the project workspace
+				' dwgPathName = FindDrawingFile(oRefDoc)
+				
+				' If dwgPathName = "" Then 
+					' PrtsMissingDwgs.Add(oRefDoc.FullDocumentName)
+					' bFoundFile = True
+				' Else 
+					' 'oAppend.WriteLine("FOUND : " & dwgPathName & " FOR : " & oRefDoc.FullDocumentName)
+				' End If
+			' End If
+			' Catch
+			
+				' 'oAppend.WriteLine("MAKE-BUY PROPERTY NOT FOUND : " & oRefDoc.FullDocumentName)
+				' PrtsMissingMB.Add(oRefDoc.FullDocumentName)
+				' bFoundFile = True
+			' End Try
+		' End If
+	' Next
 	
 	'- - - - - - - - - - - - -
 	If bFoundFile = True Then
@@ -191,3 +237,99 @@ Function FindDrawingFile(PartOrAssemblyDoc As Document)
         FindDrawingFile = drawingFilename
     End If
 End Function
+
+Sub GetDocsFromBOM(oDoc as Document, ByRef BOMDocs as List(of String))
+	
+	If oDoc.DocumentType <> kAssemblyDocumentObject Then
+		MsgBox("This rule can only be run from an assembly")
+		Exit Sub
+	End If
+	
+	Dim oDocBOM As BOM = oDoc.ComponentDefinition.BOM
+
+	oDocBOM.StructuredViewEnabled = True
+	oDocBOM.StructuredViewFirstLevelOnly = False
+	oDocBOM.PartsOnlyViewEnabled = False
+
+	Dim oBOMView as BOMView = oDocBOM.BOMViews.Item("Structured")	
+	Dim oBOMRows As BOMRowsEnumerator = oBOMView.BOMRows
+	Dim oCompDef As ComponentDefinition
+	Dim oPNProp as Inventor.Property
+		
+	For Each oRow as BOMRow in oBOMRows
+		
+			GetBOMRowDocFile(oRow, BOMDocs)
+		
+	Next 
+	
+	'BOMDocs.Sort()
+	
+End Sub
+
+Sub GetBOMRowDocFile(oRow as BOMRow, ByRef BOMDocs as List(of String))
+	
+	Dim oCompDef As ComponentDefinition
+	
+	'Add the part number of the current row, for parts that have children
+	oCompDef = oRow.ComponentDefinitions.Item(1)
+	
+	If oCompDef.Type = 100675072 Then 'exclude Virtual Components
+		'do nothing
+	Else
+
+		DocName = oCompDef.Document.FullFileName
+
+		If Not BOMDocs.Contains(DocName) Then
+			BOMDocs.Add(DocName)
+		End If
+		
+	End If
+		
+	If Not oRow.ChildRows Is Nothing Then
+	
+		If Not BOMDocs.Contains(DocName) Then
+			BOMDocs.Add(DocName)
+		End If
+	
+		For Each oChildRow as BOMRow in oRow.ChildRows		
+			GetBOMRowDocFile(oChildRow, BOMDocs)
+		Next
+		
+	End If
+	
+End Sub
+
+Function FindDrawingFilePN(PartOrAssemblyDoc As Document) As String 'find drawing (dwg or idw) of Model Document by Part number.  Drawing file name should match part number.  
+    Dim fullFilenamePN As String
+    fullFilenamePN = PartOrAssemblyDoc.fullFilename
+   
+    ' Extract the path from the full filename.
+    Dim path As String = ThisApplication.DesignProjectManager.ActiveDesignProject.WorkspacePath
+    'path = Left$(fullFilenamePN, InStrRev(fullFilenamePN, "\"))
+
+	Dim iProps as PropertySet = PartOrAssemblyDoc.PropertySets.Item("Design Tracking Properties")
+	Dim pn = iProps.Item("Part Number")
+	
+    Dim filename As String = pn.Value
+
+    ' Find if the drawing exists.
+    Dim drawingFilename As String
+    drawingFilename = ThisApplication.DesignProjectManager.ResolveFile(path, filename & ".dwg")
+   
+    ' Check the result.
+    If drawingFilename = "" Then
+       
+        ' Find if the drawing exists.
+        drawingFilename = ThisApplication.DesignProjectManager.ResolveFile(path, filename & ".idw")
+   
+        ' Return the result.
+        If drawingFilename <> "" Then
+            Return drawingFilename
+        Else
+            Return ""
+        End If
+    Else
+        ' Return the result.
+         Return drawingFilename
+    End If
+End Function 'FindDrawingFilePN

@@ -53,11 +53,11 @@ oDoc = ThisApplication.ActiveDocument
 		
 
 iProperties.Value("Custom", "DRAWING_UNITS") = "mm"	
-iProperties.Value("Custom","PDFStamp_AlignHorz") = "RIGHT"
+iProperties.Value("Custom","PDFStamp_AlignHorz") = "LEFT"
 iProperties.Value("Custom","PDFStamp_AlignVert") = "BOTTOM"
 iProperties.Value("Custom","PDFStamp_FontColour") = "BLACK"
-iProperties.Value("Custom","PDFStamp_FontSize(mm)") = "0"
-iProperties.Value("Custom","PDFStamp_FontType") = "DEFAULT"
+iProperties.Value("Custom","PDFStamp_FontSize(mm)") = "3"
+iProperties.Value("Custom","PDFStamp_FontType") = "ARIAL"
 
 iProperties.Value("Custom", "PDFStamp_Include_Element") = oTrue
 iProperties.Value("Custom","PDFStamp_Include_JobNo") = oTrue
@@ -70,17 +70,17 @@ iProperties.Value("Custom", "PDFStamp_Prefix_Kit") = "KIT:"
 iProperties.Value("Custom", "PDFStamp_Prefix_MakeQty") = "MAKE QTY:"
 iProperties.Value("Custom", "PDFStamp_Prefix_Project") = "PROJECT:"
 
-iProperties.Value("Custom", "PDFStamp_PsnX_Element") = 77.35
-iProperties.Value("Custom", "PDFStamp_PsnX_JobNo") = 77.35
-iProperties.Value("Custom", "PDFStamp_PsnX_Kit") = 77.35
-iProperties.Value("Custom", "PDFStamp_PsnX_MakeQty") = 77.35
-iProperties.Value("Custom", "PDFStamp_PsnX_Project") = 77.35
+iProperties.Value("Custom", "PDFStamp_PsnX_Element") = 972
+iProperties.Value("Custom", "PDFStamp_PsnX_JobNo") = 972
+iProperties.Value("Custom", "PDFStamp_PsnX_Kit") = 972
+iProperties.Value("Custom", "PDFStamp_PsnX_MakeQty") = 972
+iProperties.Value("Custom", "PDFStamp_PsnX_Project") = 972
 
-iProperties.Value("Custom", "PDFStamp_PsnY_Element") = 42
-iProperties.Value("Custom", "PDFStamp_PsnY_JobNo") = 30
-iProperties.Value("Custom", "PDFStamp_PsnY_Kit") = 36
-iProperties.Value("Custom", "PDFStamp_PsnY_MakeQty") = 24
-iProperties.Value("Custom", "PDFStamp_PsnY_Project") = 48
+iProperties.Value("Custom", "PDFStamp_PsnY_Element") = 175
+iProperties.Value("Custom", "PDFStamp_PsnY_JobNo") = 145
+iProperties.Value("Custom", "PDFStamp_PsnY_Kit") = 160
+iProperties.Value("Custom", "PDFStamp_PsnY_MakeQty") = 130
+iProperties.Value("Custom", "PDFStamp_PsnY_Project") = 190
 iProperties.Value("Custom", "PDFStamp_Setting") = "STANDARD"
 
 

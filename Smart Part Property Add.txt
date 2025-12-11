@@ -30,7 +30,7 @@ Sub Main()
 	Dim CustomGroupName As String = "TAIT Smart Part"
 	Dim pSPVer
 	Dim pSP
-	Dim VersionNum as String = "2.2.4"
+	Dim VersionNum as String = "2.4"
 	
 	'Add Values To List
 	'String iProperties - for smart part
@@ -46,16 +46,19 @@ Sub Main()
 	TTPropsTxt.Add("HasDwg")
 	TTPropsTxt.Add("exportPath")
 	TTPropsTxt.Add("SPVer")
+	TTPropsTxt.Add("LENGTH_mm")
+	TTPropsTxt.Add("WIDTH_mm")
+	TTPropsTxt.Add("THICKNESS_mm")
 	
 	'For machining estimation
-	TTPropsTxt.Add("MilledFaceCount")
-	TTPropsTxt.Add("MATERIAL REMOVED")
-	TTPropsTxt.Add("HolesTapped")
-	TTPropsTxt.Add("Holes")
-	TTPropsTxt.Add("Edge Count")
-	TTPropsTxt.Add("Perimeter")
-	TTPropsTxt.Add("RoutTime")
-	TTPropsTxt.Add("MillTime")
+	' TTPropsTxt.Add("MilledFaceCount")
+	' TTPropsTxt.Add("MATERIAL REMOVED")
+	' TTPropsTxt.Add("HolesTapped")
+	' TTPropsTxt.Add("Holes")
+	' TTPropsTxt.Add("Edge Count")
+	' TTPropsTxt.Add("Perimeter")
+	' TTPropsTxt.Add("RoutTime")
+	' TTPropsTxt.Add("MillTime")
 	
 	'Add Boolean iProperties
 	TTPropsBool.Add("SP")
@@ -84,13 +87,14 @@ Sub Main()
 	'Check that the document Is a model file
 	If oDoc.DocumentType = kPartDocumentObject OrElse oDoc.DocumentType = kAssemblyDocumentObject Then
 		
+		ParamExportCheck(oDoc)
+		
 		PropAdd(TTPropsTxt, "TXT")
 		PropAdd(TTPropsBool, "BOOL")
 		ParamAdd(TTParamsIn, "IN", CustomGroupName)
 		ParamAdd(TTParamsBool, "BOOL", CustomGroupName)
 		'ParamAdd(TTParamsUL, "UL", CustomGroupName)
 		OPSMVParamAdd(TTParamsOPS, CustomGroupName)
-		
 		
 		CustomParamGroup(oDoc, TTParamsBool, CustomGroupName)
 		CustomParamGroup(oDoc, TTParamsIn, CustomGroupName)
@@ -113,66 +117,70 @@ Sub Main()
 		MessageBox.Show("Smart Part Config can only be run in a Part or Assembly", "File Type Error")
 	End If
 	
-	oDoc.ModelingSettings.TappedHoleDiameter = 21764
-	'kThreadMajorDiameter = 21761
-	'kThreadMinorDiameter = 21762
-	'kThreadPitchDiameter = 21763
-	'kThreadTapDrillDiameter = 21764
-	
+	Try
+		oDoc.ModelingSettings.TappedHoleDiameter = 21764
+		'kThreadMajorDiameter = 21761
+		'kThreadMinorDiameter = 21762
+		'kThreadPitchDiameter = 21763
+		'kThreadTapDrillDiameter = 21764
+	Catch
+		Msgbox("Error setting the tapped hole modeling settings.  ")
+	End Try
 	
 End Sub
 	
 '''''''''''''''''''''''''Subroutines
 Public Sub OPSMVParamAdd(Params As List(Of String), GroupName As String)
 	
-	Dim OPList(0 To 43) As String 
+	Dim OPList As New List(Of String)
 	
-	OPList(0)=""" """
-	OPList(1)="""OP009:Lathe CNC~"""
-	OPList(2)="""OP010:Mill CNC~"""
-	OPList(3)="""OP011:Router CNC~"""
-	OPList(4)="""OP012:Mill Manual~"""
-	OPList(5)="""OP013:Lathe Manual~"""
-	OPList(6)="""OP014:Cutting~"""
-	OPList(7)="""OP015:OS - Milling~"""
-	OPList(8)="""OP016:Rolling~"""
-	OPList(9)="""OP017:Bending~"""
-	OPList(10)="""OP020:Paint~"""
-	OPList(11)="""OP022:OS - Turning~"""
-	OPList(12)="""OP023:OS - 2D Laser~"""
-	OPList(13)="""OP024:OS - Waterjetting~"""
-	OPList(14)="""OP027:CNC Program~"""
-	OPList(15)="""OP034:OS - Forming~"""
-	OPList(16)="""OP035:OS - 3D Laser~"""
-	OPList(17)="""OP036:OS - TIG Welding~"""
-	OPList(18)="""OP038:OS - Turnkey Fabrication~"""
-	OPList(19)="""OP039:OS - Powder Coating~"""
-	OPList(20)="""OP040:OS – Anodizing~"""
-	OPList(21)="""OP041:OS - Injection Molding~"""
-	OPList(22)="""OP060:OS – Misc~"""
-	OPList(23)="""OP061:Softgoods - Fabrication~"""
-	OPList(24)="""OP062:Control – Fabrication~"""
-	OPList(25)="""OP071:OS - 2D Laser & Form~"""
-	OPList(26)="""OP080:OS – Plating~"""
-	OPList(27)="""OP086:OS – Polishing~"""
-	OPList(28)="""OP087: OS - Sandblast~"""
-	OPList(29)="""OP089:OS - Electrical~"""
-	OPList(30)="""OP110:OS - Routing~"""
-	OPList(31)="""OP128:LED Fab~"""
-	OPList(32)="""OP139:3D – Printing~"""
-	OPList(33)="""OP141:OS - Upholstery~"""
-	OPList(34)="""OP145:Post Processing~"""
-	OPList(35)="""OP146:Laser Cutting / Etching~"""
-	OPList(36)="""OP186:OS - Spray Paint~"""
-	OPList(37)="""OP189:OS - Heat Treat & Destruction~"""
-	OPList(38)="""OP191:OS - Passivate~"""
-	OPList(39)="""OP223:OS - Screenprinting~"""
-	OPList(40)="""OP750:FAB-Quality Control~"""
-	OPList(41)="""OP760:FAB-Weld Inspection~"""
-	OPList(42)="""OP800:MSP-Waterjet~"""
-	OPList(43)="""OP801:MSP-Folding~"""
+	OPList.Add(" ")
+	OPList.Add("OP009:Lathe CNC~")
+	OPList.Add("OP010:Mill CNC~")
+	OPList.Add("OP011:Router CNC~")
+	OPList.Add("OP012:Mill Manual~")
+	OPList.Add("OP013:Lathe Manual~")
+	OPList.Add("OP014:Cutting~")
+	OPList.Add("OP015:OS - Milling~")
+	OPList.Add("OP016:Rolling~")
+	'OPList.Add("OP017:Bending~") 'Found to be obsolete 20251020
+	OPList.Add("OP020:Paint~")
+	OPList.Add("OP022:OS - Turning~")
+	OPList.Add("OP023:OS - 2D Laser~")
+	OPList.Add("OP024:OS - Waterjetting~")
+	'OPList.Add("OP027:CNC Program~") 'obsoleted 20251201 CPR
+	OPList.Add("OP031:FAB-MechFabrication")
+	OPList.Add("OP034:OS - Forming~")
+	OPList.Add("OP035:OS - 3D Laser~")
+	OPList.Add("OP036:OS - TIG Welding~")
+	OPList.Add("OP038:OS - Turnkey Fabrication~")
+	OPList.Add("OP039:OS - Powder Coating~")
+	OPList.Add("OP040:OS - Anodizing~")
+	OPList.Add("OP041:OS - Injection Molding~")
+	OPList.Add("OP060:OS - Misc~")
+	OPList.Add("OP061:Softgoods - Fabrication~")
+	OPList.Add("OP062:Control – Fabrication~")
+	OPList.Add("OP071:OS - 2D Laser & Form~")
+	OPList.Add("OP080:OS - Plating~")
+	OPList.Add("OP086:OS - Polishing~")
+	OPList.Add("OP087:OS - Sandblast~")
+	OPList.Add("OP089:OS - Electrical~")
+	OPList.Add("OP110:OS - Routing~")
+	OPList.Add("OP128:LED Fab~")
+	OPList.Add("OP139:3D - Printing~")
+	OPList.Add("OP141:OS - Upholstery~")
+	'OPList.Add("OP145:Post Processing~") 'obsoleted 20251201 CPR
+	OPList.Add("OP146:Laser Cutting / Etching~")
+	OPList.Add("OP186:OS - Spray Paint~")
+	OPList.Add("OP189:OS - Heat Treat & Destruction~")
+	OPList.Add("OP191:OS - Passivate~")
+	OPList.Add("OP223:OS - Screenprinting~")
+	OPList.Add("OP750:FAB-Quality Control~")
+	OPList.Add("OP760:FAB-Weld Inspection~")
+	OPList.Add("OP800:MSP-Waterjet~")
+	OPList.Add("OP801:MSP-Folding~")
 	
-	
+	OPList.Sort()
 	
 	Dim OPx As Parameter
 	
@@ -211,7 +219,7 @@ Public Sub OPSMVParamAdd(Params As List(Of String), GroupName As String)
 		OPx = oCompDef.Parameters.UserParameters.Item(pmtr)
 		
 		OPx.ExpressionList.ClearAll()
-		OPx.ExpressionList.SetExpressionList(OPList, False)	
+		OPx.ExpressionList.SetExpressionList(OPList.ToArray(), False)	
 	
 	Next
 	
@@ -343,3 +351,28 @@ Sub CustomParamGroup(Doc as Document, Params as List(Of String), GroupName As St
 	Next
 	
 End Sub
+
+Sub ParamExportCheck(doc As Document)
+
+	oCompDef = doc.ComponentDefinition
+	
+	Try
+		oCompDef.Parameters.Item("Length").ExposedAsProperty = False
+	Catch
+	End Try
+	
+		Try
+		oCompDef.Parameters.Item("WIDTH").ExposedAsProperty = False
+	Catch
+	End Try
+	
+	Try
+		oCompDef.Parameters.Item("THICKNESS").ExposedAsProperty = False
+	Catch
+	End Try
+	
+	Try
+		oCompDef.Parameters.Item("LENGTH").ExposedAsProperty = False
+	Catch
+	End Try
+End Sub 'ParamExportCheck

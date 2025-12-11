@@ -1,188 +1,79 @@
-﻿'pull specified number of sequential numbers from Vault sequential number scheme
+﻿AddReference "Autodesk.Connectivity.WebServices"
+AddReference "Autodesk.DataManagement.Client.Framework.Forms"
+AddReference "Autodesk.DataManagement.Client.Framework.Vault"
+AddReference "Autodesk.DataManagement.Client.Framework.Vault.Forms"
+AddReference "Connectivity.InventorAddin.EdmAddin"
 
-AddReference "Autodesk.Connectivity.WebServices.dll"
-Imports AWS = Autodesk.Connectivity.WebServices
-AddReference "Autodesk.DataManagement.Client.Framework.Vault.dll"
-Imports VDF = Autodesk.DataManagement.Client.Framework 
-AddReference "Connectivity.Application.VaultBase.dll"
-Imports VB = Connectivity.Application.VaultBase
-
+Imports ACW = Autodesk.Connectivity.WebServices
+Imports VDF = Autodesk.DataManagement.Client.Framework
+Imports Autodesk.DataManagement.Client.Framework.Vault.Services
+Imports Autodesk.DataManagement.Client.Framework.Vault.Currency.Connections
+Imports edm = Connectivity.InventorAddin.EdmAddin
+Imports System.Collections.Generic
 Imports My.Computer.FileSystem
 
 Sub Main()
-
-
-	SharedVariable("LogVar") = "Reserve Sequential TESTING"
-	iLogicVb.RunExternalRule("Write SV to Log.iLogicVB")
-	
-	
-	Dim mVltCon As VDF.Vault.Currency.Connections.Connection 
-	mVltCon = VB.ConnectionManager.Instance.Connection
-	  
-	If  mVltCon Is Nothing Then
-		 MessageBox.Show("Not Logged In to Vault! - Login first and repeat executing this rule.")
-		 Exit Sub
-	End If
-	
-	' Dim oDoc As Document = ThisApplication.ActiveEditDocument
-	' Dim oDocIt As VDF.Vault.Currency.Entities.FileIteration = GetVaultFile(oDoc.FullFileName, mVltCon)
-	
-	' DownloadAssembly(oDocIt, mVltCon)
-	
-	
-	
-		
-End Sub 'Main
-
-Sub ReserveNumbers(numToReserve as Integer, mVltCon As VDF.Vault.Currency.Connections.Connection)
-	Dim oSchemes
-	Dim oSeqSchm
-	Dim FinalText as String
-	Dim GenNum As Integer
-	'Dim vltWebServ = Autodesk.Connectivity.WebServices
-	'Dim vltDocServ = AWS.DocumentService
-	'Get numbering schemes
-	oSeqScheme = AWS.DocumentService.GetNumberingSchemesByType([Autodesk.Connectivity.WebServices.NumSchmType]::(Activated))
-	
-	msgbox(oSeqScheme.SchmID)
-	'Find the one that matches "Sequential"
-	' For Each oScheme in oSchemes
-		' If oScheme.Name  = "Sequential" Then
-			' oSeqSchmID = oScheme.SchmID
-			' Exit For
-		' End If
-	' Next
-	
-	'for loop generates entered number, copied to clipboard
-	For i = 0 to numToReserve 
-		
-		If i = numToReserve Then
-			FinalText = FinalText & GenNum
-		Else 
-			FinalText = FinalText & vbCr & GenNum
-		End If
-		
+    ' Prompt for scheme name 
+    Dim schemeName As String = "Sequence" 'InputBox("Enter the Vault numbering scheme name:", "Numbering Scheme", "DefaultScheme")
+    If String.IsNullOrEmpty(schemeName) Then Exit Sub ' Cancel if empty
+    
+    ' Prompt for number of files
+    Dim inputNum As String = InputBox("Enter the number of file numbers to generate:", "Quantity", "1")
+    Dim numFiles As Integer
+    If Not Integer.TryParse(inputNum, numFiles) OrElse numFiles <= 0 Then
+        MessageBox.Show("Invalid number entered. Exiting.", "Error")
+        Exit Sub
+    End If
+    
+    ' Generate and display
+    Dim generatedNumbers As List(Of String) = getFilenamesFromVaultNamingScheme(schemeName, "", numFiles)
+	Dim copyText as String = ""
+	For each num In generatedNumbers
+		If Not num = inputNum Then
+			copyText = copyText & num & vbCr
+		Else
+			copyText = copyText & num
+		End if
 	Next
 	
-	My.Computer.Clipboard.SetText(FinalText)
+	My.Computer.Clipboard.SetText(copyText)
 	
+    If generatedNumbers IsNot Nothing AndAlso generatedNumbers.Count > 0 Then
+        Dim output As String = "Generated " & generatedNumbers.Count & " numbers:" & Environment.NewLine & String.Join(Environment.NewLine, generatedNumbers)
+        MessageBox.Show("Success! Numbers have been copied to your clipboard.  ","Success", MessageBoxButtons.OK, MessageBoxIcon.Information)
+		
 	
+		
+    End If
 End Sub
 
-Function GetVaultFile(VaultPath As String, mVltCon As VDF.Vault.Currency.Connections.Connection) As VDF.Vault.Currency.Entities.FileIteration
-
-	VaultPath = VaultPath.Replace("C:\_vaultWIP\", "$/")
-
-	'flip the slashes
-	VaultPath = VaultPath.Replace("\", "/")
-
-	Dim VaultPaths() As String = New String() {VaultPath}
-	
-	Dim wsFiels() As AWS.File = mVltCon.WebServiceManager.DocumentService.FindLatestFilesByPaths(VaultPaths)
-
-	GetVaultFile = New VDF.Vault.Currency.Entities.FileIteration(mVltCon,wsFiels(0))
-	
-End Function 'GetVaultFile
-
-Sub CheckVault(VaultPath As String, mVltCon As VDF.Vault.Currency.Connections.Connection)
-
-	VaultPath = VaultPath.Replace("C:\_vaultWIP\", "$/")
-
-	'flip the slashes
-	VaultPath = VaultPath.Replace("\", "/")
-
-	Dim VaultPaths() = New String() {VaultPath}
-	  
-	Dim wsFiels() As AWS.File = mVltCon.WebServiceManager.DocumentService.FindLatestFilesByPaths(VaultPaths)
-	  
-	Dim mFileIt As VDF.Vault.Currency.Entities.FileIteration = New VDF.Vault.Currency.Entities.FileIteration(conn,wsFiels(0))
-	Dim lifeCycleInfo As VDF.Vault.Currency.Entities.FileLifecycleInfo = mFileIt.LifecycleInfo
-
-	VStatus = lifeCycleInfo.StateName
-
-	If VStatus = "Work In Progress" OrElse VStatus ="Released" OrElse VStatus ="Quick-Change"
-		MessageBox.Show("Part is in Vault" & vbCrLf & "(" & VStatus & ")", "In Vault?")
-	Else
-			MessageBox.Show("Part not in Vault", "In Vault?")
-	End If
-End Sub 'CheckVault
-
-Function FindDrawingFilePN(PartOrAssemblyDoc As Document) As String
-    Dim fullFilenamePN As String
-    fullFilenamePN = PartOrAssemblyDoc.fullFilename
-   
-    ' Extract the path from the full filename.
-    Dim path As String = ThisApplication.DesignProjectManager.ActiveDesignProject.WorkspacePath
-    'path = Left$(fullFilenamePN, InStrRev(fullFilenamePN, "\"))
-
-	Dim iProps as PropertySet = PartOrAssemblyDoc.PropertySets.Item("Design Tracking Properties")
-	Dim pn = iProps.Item("Part Number")
-	
-    Dim filename As String = pn.Value
-
-    ' Find if the drawing exists.
-    Dim drawingFilename As String
-    drawingFilename = ThisApplication.DesignProjectManager.ResolveFile(path, filename & ".dwg")
-   
-    ' Check the result.
-    If drawingFilename = "" Then
-       
-        ' Find if the drawing exists.
-        drawingFilename = ThisApplication.DesignProjectManager.ResolveFile(path, filename & ".idw")
-   
-        ' Return the result.
-        If drawingFilename <> "" Then
-            Return drawingFilename
-        Else
-            Return ""
-        End If
-    Else
-        ' Return the result.
-         Return drawingFilename
+Public Function getFilenamesFromVaultNamingScheme(RequiredSchemeName As String, RequiredSchemeString As String, numberOfNames As Integer) As List(Of String)
+    Dim numbers As New List(Of String)
+    Dim Connection As VDF.Vault.Currency.Connections.Connection = edm.EdmSecurity.Instance.VaultConnection()
+    If Connection Is Nothing Then
+        MessageBox.Show("No Vault connection detected. Please log in to Vault.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Return Nothing
     End If
-End Function 'FindDrawingFilePN
-
-Public Sub DownloadAssembly(topLevelAssembly As VDF.Vault.Currency.Entities.FileIteration, m_conn As VDF.Vault.Currency.Connections.Connection)
-	
-	' download the latest version of the assembly to working folders
-	Dim settings As New VDF.Vault.Settings.AcquireFilesSettings(m_conn)		
-	settings.OptionsRelationshipGathering.FileRelationshipSettings.IncludeChildren = True
-	settings.OptionsRelationshipGathering.FileRelationshipSettings.RecurseChildren = True
-	settings.OptionsRelationshipGathering.FileRelationshipSettings.IncludeParents = False
-	settings.OptionsRelationshipGathering.FileRelationshipSettings.IncludeRelatedDocumentation = True		
-	settings.OptionsRelationshipGathering.FileRelationshipSettings.VersionGatheringOption = VDF.Vault.Currency.VersionGatheringOption.Latest
-	settings.AddFileToAcquire(topLevelAssembly, VDF.Vault.Settings.AcquireFilesSettings.AcquisitionOption.Download)	
-	Dim results As VDF.Vault.Results.AcquireFilesResults
-	
-	If settings.IsValidConfiguration = True Then
-		results = m_conn.FileManager.AcquireFiles(settings)
-		MsgBox("Files Acquired")
-	Else
-		MsgBox("Settings Invalid")
-	End If
-	
-End Sub 'DownloadAssembly
-
-' Public Sub DownloadFile(fileIter As (fileIteration(Of VDF.Vault.Currency.Entities.FileIteration))
-
-       ' ' download individual files to a temp location
-
-       ' Dim settings As New VDF.Vault.Settings.AcquireFilesSettings(m_conn)
-
-       ' settings.LocalPath = New VDF.Currency.FolderPathAbsolute(ThisApplication.DesignProjectManager.ActiveDesignProject.WorkspacePath)
-
-       ' For Each fileIter As VDF.Vault.Currency.Entities.FileIteration In fileIters
-
-              ' settings.AddFileToAcquire(fileIter, _ _
-
-               ' VDF.Vault.Settings.AcquireFilesSettings.AcquisitionOption.Download)
-
-       ' Next
-
- 
-
-       ' Dim results As VDF.Vault.Results.AcquireFilesResults = _
-
-           ' m_conn.FileManager.AcquireFiles(settings)
-
-' End Sub 'DownloadFiles
+    
+    Try
+        Dim entityClassId = VDF.Vault.Currency.Entities.EntityClassIds.Files
+        Dim numSchemes As ACW.NumSchm() = Connection.WebServiceManager.NumberingService.GetNumberingSchemes(entityClassId, Nothing)
+        Dim requiredScheme As ACW.NumSchm = (From sch As ACW.NumSchm In numSchemes Where sch.Name = RequiredSchemeName Select sch).FirstOrDefault()
+        
+        If requiredScheme Is Nothing Then
+            MessageBox.Show("Numbering scheme '" & RequiredSchemeName & "' not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Return Nothing
+        End If
+        
+        Dim numGenArgs() As String = {RequiredSchemeString}
+        For i As Integer = 1 To numberOfNames
+            Dim genNum As String = Connection.WebServiceManager.DocumentService.GenerateFileNumber(requiredScheme.SchmID, numGenArgs)
+            numbers.Add(genNum)
+        Next
+        
+        Return numbers
+    Catch ex As Exception
+        MessageBox.Show("Error generating numbers: " & ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Return Nothing
+    End Try
+End Function

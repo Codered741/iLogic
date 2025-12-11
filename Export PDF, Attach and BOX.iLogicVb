@@ -1,4 +1,7 @@
-﻿Sub Main()
+﻿Imports System.IO
+Imports System.Text.RegularExpressions
+
+Sub Main()
 'declarations
 	Dim oDoc As Document = ThisApplication.ActiveDocument
 	Dim compOcc As ComponentOccurrence
@@ -164,13 +167,14 @@
 
 			oDataMediumAttach.FileName = oPath & "\" & oFileName & ".pdf"
 			
-			If 	iProperties.Value("Custom", "BOXLink") <> "" Then
-			oDataMediumExport.FileName = oPath & "\" & oFileName & " - " & oPrj & " - " & oDesc & " -REV" & oRevNum & " " & Now.ToString("yyyyMMdd") & ".pdf"
-	
-		
-			Else
+			Dim oExportString as String = oFileName & " - " & oPrj & " - " & oDesc & " -REV" & oRevNum
 			
-			oDataMediumExport.FileName = SharedVariable("PathSelected") & "\" & oFileName & " - " & oPrj & " - " & oDesc & " - rev" & oRevNum & " " & Now.ToString("yyyyMMdd") & ".pdf"
+			oExportString = RemoveIllegalFileNameChars(oExportString)
+			
+			If 	iProperties.Value("Custom", "BOXLink") <> "" Then
+				oDataMediumExport.FileName = oPath & "\" & oExportString & " " & Now.ToString("yyyyMMdd") & ".pdf"
+			Else
+				oDataMediumExport.FileName = SharedVariable("PathSelected") & "\" & oExportString & " " & Now.ToString("yyyyMMdd") & ".pdf"
 			End If
 			
 			'Publish document
@@ -315,4 +319,16 @@ Function BrowseForFolder As Object
 Invalid:
      'If it was determined that the selection was invalid, set to False
     BrowseForFolder = False
+End Function
+
+Public Shared Function RemoveIllegalFileNameChars(input As String) As String
+    ' Get the array of invalid characters.
+    Dim invalidChars As Char() = System.IO.Path.GetInvalidFileNameChars()
+
+    ' Create a regular expression pattern from the invalid characters.
+    Dim regexSearch As String = String.Join("", invalidChars)
+    Dim r As New Regex(String.Format("[{0}]", Regex.Escape(regexSearch)))
+
+    ' Replace all illegal characters with an empty string.
+    Return r.Replace(input, "_")
 End Function

@@ -123,7 +123,7 @@ Sub Main()
 	
 	AcadDoc.SendCommand("-view" & vbCr & "_seiso" & vbCr)
 	
-	AcadDoc.SendCommand("rotate3d" & vbCr & "all" & vbCr & vbCr & "x" & vbCr & vbCr & "90" & vbCr)
+	'AcadDoc.SendCommand("rotate3d" & vbCr & "all" & vbCr & vbCr & "x" & vbCr & vbCr & "90" & vbCr)
 	
 	AcadDoc.SendCommand("-purge" & vbCr & "a"  & vbCr & "*" & vbCr & "n"  & vbCr)
 	

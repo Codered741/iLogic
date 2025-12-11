@@ -28,6 +28,18 @@
    'oSourceDocument = ThisApplication.Documents.Open("C:\_vaultWIP\Designs\Templates\Universal\GENERAL UNIVERSAL TITLE BLOCK SIZE B TEMPLATE.dwg", False)
    oSourceDocument = ThisApplication.Documents.Open(selectedfile, False)
    
+   'Get the new source sheet formats
+   Dim oSourceSheetFormats As SheetFormats
+   oSourceSheetFormats = oSourceDocument.SheetFormats
+   
+   For Each oSourceSheetFormat As SheetFormat In oSourceSheetFormats
+   
+   'Copy the sheet formats to the new doc
+   Dim oNewSheetFormat As SheetFormat
+   oNewSheetFormat = oSourceSheetFormat.CopyTo(oNewDocument)
+   
+   Next
+   
     ' Get the new source title block definition.
     Dim oSourceTitleBlockDefs As TitleBlockDefinitions
     oSourceTitleBlockDefs = oSourceDocument.TitleBlockDefinitions

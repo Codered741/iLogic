@@ -1,23 +1,51 @@
 	'Get the log file and prepare to write
-	Dim oAppend As System.IO.StreamWriter
-	Dim oFile As String = "Z:\Inventor Data\SV Log.log"
-	Dim noWrite as Boolean = False
+	'Dim oAppend As System.IO.StreamWriter
+	'Dim oFile As String = "Z:\Inventor Data\SV Log.log"
+	'Dim noWrite as Boolean = False
+Sub Main()
 	Dim LogVar As String 
+	Dim oDoc as Document = ThisApplication.ActiveEditDocument
 	Try	
 		LogVar = SharedVariable("LogVar")
 	Catch
-		noWrite = True
+		Exit Sub
 	End Try
 	
 	'Check for access to the log file, disable writing if no access
-	Try
-		oAppend = IO.File.AppendText(oFile)
-	Catch
-		noWrite = True
-	End Try
+	' Try
+		' oAppend = IO.File.AppendText(oFile)
+	' Catch
+		' noWrite = True
+	' End Try
 	'Write header info to log if access to log is enabled
-	If noWrite = False Then
-		oAppend.WriteLine(ThisApplication.UserName & "," & DateTime.Now.ToString("s") & "," & LogVar)
-		oAppend.Flush()
-		oAppend.Close()
-	End If
+	' If noWrite = False Then
+		' oAppend.WriteLine(ThisApplication.UserName & "," & DateTime.Now.ToString("s") & "," & LogVar)
+		' oAppend.Flush()
+		' oAppend.Close()
+	' End If
+	
+	Dim jsonPayload As String = "{" & _
+		"""timestamp"":""" & DateTime.UtcNow.ToString("s") & """," & _
+		"""user"":""" & ThisApplication.UserName & """," & _
+		"""filename"":""" & DocumentFileNameExt(oDoc) & """," & _
+		"""message"":""" & LogVar & """" & _
+	"}"
+	
+	'excel link: https://docs.google.com/spreadsheets/d/e/2PACX-1vS94q5BDMf47DwRJFys8fSBy_EsEkKMo8hjYjjrzjv8uZBqegBRsuoqpyST5nLhwpwoHQ7u40iQiK84/pub?output=xlsx
+	'sheets link: https://docs.google.com/spreadsheets/d/1xyZg9yvbTy53-RkiHvWSQHN4hXrcoHbA20sSSSL9lXw/edit?usp=sharing
+	
+	dim logUrl as String = "https://script.google.com/macros/s/AKfycbwqNPEztVGSJVSo4t9lmA1MHKYH8ub9Gjda3H1yGEg1b9opfVjJRkxu7Sc5J24iXwPb/exec"
+	
+	Try
+		Dim wc As New System.Net.WebClient
+		wc.Headers.Add("Content-Type", "application/json")
+		wc.UploadString(logUrl, "POST", jsonPayload)
+	Catch ex As Exception
+		'MessageBox.Show("Log failed: " & ex.Message)
+	End Try
+	
+End Sub 'Main
+
+Function DocumentFileNameExt(Doc as Document) As String
+	DocumentFileNameExt = IO.Path.GetFileName(Doc.FullFileName)
+End Function

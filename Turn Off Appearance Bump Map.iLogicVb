@@ -1,87 +1,87 @@
-﻿ 
- 	SharedVariable("LogVar") = "Turn Off Appearance Bump Map"
-	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
- 
- 'This rule will turn of bump mapping for all DOCUMENT APPEARANCES
+﻿ 'This rule will turn of bump mapping for all DOCUMENT APPEARANCES
  
  Sub Main 'Get active document
- Dim oDoc As Document = ThisApplication.ActiveDocument
- 
- If oDoc.DocumentType = kPartDocumentObject Then
+	 Dim oDoc As Document = ThisApplication.ActiveDocument
 
-        Dim oAppearanceAssets As AssetsEnumerator = oDoc.AppearanceAssets
-        Dim oAsset As Asset
+	 
+	SharedVariable("LogVar") = "Turn Off Appearance Bump Map"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	 
+	 If oDoc.DocumentType = kPartDocumentObject Then
 
-        'loop trough the part appearences
-        For Each oAsset In oAppearanceAssets
+			Dim oAppearanceAssets As AssetsEnumerator = oDoc.AppearanceAssets
+			Dim oAsset As Asset
 
-            'Loop through the assetsvalues, that you see in the appearance dialogbox
-            Dim oAssetValue As AssetValue
-            For Each oAssetValue In oAsset
-				    Try
-                    If oAssetValue.DisplayName = "Bump" Then
-                        Dim colorAssetValue As ColorAssetValue
-                        colorAssetValue = oAssetValue
-                        colorAssetValue.HasConnectedTexture = False
-                    End If
-                Catch
-				End Try
-			 Next
-        Next
+			'loop trough the part appearences
+			For Each oAsset In oAppearanceAssets
 
-Else If oDoc.DocumentType = kAssemblyDocumentObject Then
-	
-	Dim oAsmCompDef As AssemblyComponentDefinition
-oAsmCompDef = ThisApplication.ActiveDocument.ComponentDefinition
-Dim oOccurrence As ComponentOccurrence
-Call Cycle(oAsmCompDef.Occurrences, 1)
+				'Loop through the assetsvalues, that you see in the appearance dialogbox
+				Dim oAssetValue As AssetValue
+				For Each oAssetValue In oAsset
+						Try
+						If oAssetValue.DisplayName = "Bump" Then
+							Dim colorAssetValue As ColorAssetValue
+							colorAssetValue = oAssetValue
+							colorAssetValue.HasConnectedTexture = False
+						End If
+					Catch
+					End Try
+				 Next
+			Next
 
-End If
+	Else If oDoc.DocumentType = kAssemblyDocumentObject Then
+		
+		Dim oAsmCompDef As AssemblyComponentDefinition
+	oAsmCompDef = ThisApplication.ActiveDocument.ComponentDefinition
+	Dim oOccurrence As ComponentOccurrence
+	Call Cycle(oAsmCompDef.Occurrences, 1)
+
+	End If
 
 End Sub
 
 
 Sub Cycle(Occurrences As ComponentOccurrences, Level As Integer)
-Dim oAsmCompDef As AssemblyComponentDefinition
-oAsmCompDef = ThisApplication.ActiveDocument.ComponentDefinition
-Dim oOccurrence As ComponentOccurrence
-Dim oOccurrenceDoc As Inventor.Document
-Dim oCompDef As Inventor.ComponentDefinition
- 
-		 
-		 
-	'Set values in each component
-	For Each oOccurrence In Occurrences
-		oOccurrenceDoc = oOccurrence.Definition.Document
-		oCompDef = oOccurrenceDoc.ComponentDefinition
-		If oOccurrence.DefinitionDocumentType=kPartDocumentObject Then
-		Dim oAppearanceAssets As AssetsEnumerator = oOccurrenceDoc.AppearanceAssets
-        Dim oAsset As Asset
-		
-		For Each oAsset In oAppearanceAssets
-            'Loop through the assetsvalues, that you see in the appearance dialogbox
-            Dim oAssetValue As AssetValue
-            For Each oAssetValue In oAsset
-				    Try
-                    If oAssetValue.DisplayName = "Bump" Then
-                        Dim colorAssetValue As ColorAssetValue
-                        colorAssetValue = oAssetValue
-                        colorAssetValue.HasConnectedTexture = False
-                    End If
-                Catch
-				End Try
-			 Next
-		
-        Next
-	End If
-		
-		
-	'Check subassemblies and update parts inside
-	If oOccurrence.DefinitionDocumentType = kAssemblyDocumentObject Then
-Call Cycle(oOccurrence.SubOccurrences, Level + 1)	
-End If	
-	Next
-	End Sub 'Cycle
+	Dim oAsmCompDef As AssemblyComponentDefinition
+	oAsmCompDef = ThisApplication.ActiveDocument.ComponentDefinition
+	Dim oOccurrence As ComponentOccurrence
+	Dim oOccurrenceDoc As Inventor.Document
+	Dim oCompDef As Inventor.ComponentDefinition
+	 
+			 
+			 
+		'Set values in each component
+		For Each oOccurrence In Occurrences
+			oOccurrenceDoc = oOccurrence.Definition.Document
+			oCompDef = oOccurrenceDoc.ComponentDefinition
+			If oOccurrence.DefinitionDocumentType=kPartDocumentObject Then
+			Dim oAppearanceAssets As AssetsEnumerator = oOccurrenceDoc.AppearanceAssets
+			Dim oAsset As Asset
+			
+			For Each oAsset In oAppearanceAssets
+				'Loop through the assetsvalues, that you see in the appearance dialogbox
+				Dim oAssetValue As AssetValue
+				For Each oAssetValue In oAsset
+						Try
+						If oAssetValue.DisplayName = "Bump" Then
+							Dim colorAssetValue As ColorAssetValue
+							colorAssetValue = oAssetValue
+							colorAssetValue.HasConnectedTexture = False
+						End If
+					Catch
+					End Try
+				 Next
+			
+			Next
+		End If
+			
+			
+		'Check subassemblies and update parts inside
+		If oOccurrence.DefinitionDocumentType = kAssemblyDocumentObject Then
+	Call Cycle(oOccurrence.SubOccurrences, Level + 1)	
+	End If	
+		Next
+End Sub 'Cycle
 	
 	
 	

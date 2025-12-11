@@ -1,7 +1,12 @@
 ﻿'AUTHOR: Cody Redding
 'CONTACT: Codered741@gmail.com
+Imports System.Globalization
+Imports System.Diagnostics
 
 Sub Main()
+	Dim stopWatch as New Stopwatch
+    stopWatch.Start()
+		
 	'Declarations
 	Dim oDoc As Document = ThisApplication.ActiveEditDocument 
 	
@@ -20,19 +25,37 @@ Sub Main()
 	End If	
 
 	Dim oUOM As UnitsOfMeasure = oDoc.UnitsOfMeasure 
-	Dim oUOMstr As String = oUOM.GetStringFromType(oUOM.LengthUnits) 'for user prompt
+	'Dim oUOMstr As String = oUOM.GetStringFromType(oUOM.LengthUnits) 'for user prompt
 	Dim oUnitsEnum as Integer = oUom.LengthUnits
 	Dim sizes As New List(Of Double)
 	Dim LString as String
 	Dim WString as String
 	Dim TString as String
-	Dim VersionNum as String = "2.2.4"
+	Dim VersionNum as String = "2.4"
 	Dim oCommandMgr As CommandManager = ThisApplication.CommandManager
 	Dim MsgComp as String = ""
 	Dim PropAddTries as Integer = 0
 	
-	oCommandMgr.ControlDefinitions.Item("VaultCheckout").Execute 'Check out file
+	Try
+		oCommandMgr.ControlDefinitions.Item("VaultCheckout").Execute 'Check out file
+	Catch
+		MsgComp = MsgComp & "Checkout Fail |"
+	End Try
 	
+	Dim oModelStates as ModelStates = oCompDef.ModelStates
+	
+	If oModelStates.Count > 1 And Not oModelStates.MemberEditScope = "57602" And Not oModelStates.ActiveModelState Is "[Primary]" Then
+		msWarn = MessageBox.Show("Running Smart Part Config from Model States other than [Primary] with 'Edit Factory Scope' disabled can cause unintended issues when publishing.  " & vbLf  & _
+			"Click 'Yes' to switch this or 'No' if you know what you are doing.  ", "Model States are Tricky!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
+		If msWarn = vbYes Then
+			oCompDef.ModelStates.MemberEditScope = "57602" 'kEditAllMembers
+			oCompDef.ModelStates.Item("[Primary]").Activate
+			MsgComp = MsgComp & "MS Yes |"
+		Else
+			MsgComp = MsgComp & "MS No |"
+		End If
+	End If
+
 	'Enforce the correct Application Options (Content Center)
 	ThisApplication.ContentCenterOptions.SetAccessOption(81154)
 		'kInventorDesktopAccess = 81153
@@ -50,7 +73,7 @@ Sub Main()
 	'Define iProperties to reference	
 	Dim pOPS
 	Dim pMB
-	Dim pSP
+	'Dim pSP
 	Dim pWidth
 	Dim pLength
 	Dim pThick
@@ -58,13 +81,36 @@ Sub Main()
 	Dim pMatDesc
 	Dim pSPVer
 	Dim pDetailer
+	Dim pLengthmm
+	Dim pWidthmm
+	Dim pThickmm
 	
+	'Ensure the 'Export' box is NOT checked for the LENGTH/WIDTH/THICKNESS parameter.  Some CC parts use this property and export it to the parameter.  This adds the unit string, which causes an error when publishing.  
+	Try
+		oCompDef.Parameters.Item("Length").ExposedAsProperty = False
+	Catch
+	End Try
+	
+	Try
+		oCompDef.Parameters.Item("LENGTH").ExposedAsProperty = False
+	Catch
+	End Try
+	
+		Try
+		oCompDef.Parameters.Item("WIDTH").ExposedAsProperty = False
+	Catch
+	End Try
+	
+	Try
+		oCompDef.Parameters.Item("THICKNESS").ExposedAsProperty = False
+	Catch
+	End Try
 	
 	Start:
 	Try 'Get custom iProperties, run property add rule if not found
 		pOPS = customPropertySet.Item("OPS")
 		pMB	= customPropertySet.Item("MakeBuy")
-		pSP = customPropertySet.Item("SP")
+		'pSP = customPropertySet.Item("SP")
 		pWidth = customPropertySet.Item("WIDTH")
 		pLength = customPropertySet.Item("LENGTH")
 		pThick = customPropertySet.Item("THICKNESS")
@@ -72,6 +118,9 @@ Sub Main()
 		pMatDesc = customPropertySet.Item("MATERIAL DESCRIPTION")
 		pSPVer = customPropertySet.Item("SPVer")
 		pDetailer = customPropertySet.Item("DETAILER")
+		pLengthmm = customPropertySet.Item("LENGTH_mm")
+		pWidthmm = customPropertySet.Item("WIDTH_mm")
+		pThickmm = customPropertySet.Item("THICKNESS_mm")
 	Catch
 		iLogicVB.RunExternalRule("Smart Part Property Add.Txt")
 		usrCancel = MessageBox.Show("Properties were added, please double check your entries.  ", "iLogic Property Check", MessageBoxButtons.OKCancel)
@@ -121,28 +170,39 @@ Sub Main()
 	
 	'Write header info to log if access to log is enabled
 	If noWrite = False Then
-		oAppend.Write(ThisApplication.UserName & "," & DateTime.Now.ToString("G") & "," & DocumentFileNameExt(oDoc) & ",")
+		oAppend.Write(ThisApplication.UserName & "," & DateTime.Now.ToString("G", New CultureInfo("en-US")) & "," & DocumentFileNameExt(oDoc) & ",") '"MM/dd/yyyy hh:mm:ss tt"
 	End If
+	
+	Dim jsonPayload As String
+	Try
+		jsonPayload = "{" & """timestamp"":""" & DateTime.UtcNow.ToString("s") & """," & """user"":""" & ThisApplication.UserName & """," & """filename"":""" & DocumentFileNameExt(oDoc) & """," & """modelState"":""" & oModelStates.ActiveModelState.Name & ""","
+	Catch
+		jsonPayload = "{" & """timestamp"":""" & DateTime.UtcNow.ToString("s") & """," & """user"":""" & ThisApplication.UserName & """," & """filename"":""" & DocumentFileNameExt(oDoc) & """," & """modelState"":""" & "No Model States" & ""","
+	End Try
 	
 	'/////////////////////////////////////////////////////// Checks for correct formatting
 	'Check for the correct file type, and that file is saved.  
 	If oDoc.DocumentType = kDrawingDocumentObject Then
 		MessageBox.Show("Smart Part Config can only be run in a Part or Assembly", "File Type Error")
-		If noWrite = False Then
-			oAppend.WriteLine("ERROR Drawing Document")
-			oAppend.Flush()
-			oAppend.Close()
-		End If
+		' If noWrite = False Then
+			' oAppend.WriteLine("ERROR Drawing Document")
+			' oAppend.Flush()
+			' oAppend.Close()
+		' End If
+		jsonPayload = jsonPayload & """," & """PartNumberOrMessage"":""" & "ERROR Drawing Document" & "}"
+		PostLog (jsonPayload)
 		Exit Sub
 	End If
 	
 	If oDoc.DocumentType = kPresentationDocumentObject Then	
 		MessageBox.Show("Smart Part Config can only be run in a Part or Assembly", "File Type Error")
-		If noWrite = False Then
-			oAppend.WriteLine("ERROR Presentation Document")
-			oAppend.Flush()
-			oAppend.Close()
-		End If
+		' If noWrite = False Then
+			' oAppend.WriteLine("ERROR Presentation Document")
+			' oAppend.Flush()
+			' oAppend.Close()
+		' End If
+		jsonPayload = jsonPayload & """," & """PartNumberOrMessage"":""" & "ERROR Presentation Document" & "}"
+		PostLog (jsonPayload)
 		Exit Sub
 	End If
 	
@@ -155,11 +215,13 @@ Sub Main()
 		MessageBox.Show("This file is saved in a folder path that is too long for Vault.  " & vbLf & _
 			"Please reduce the depth of the folder structure, or shorten the folder name lengths.  " & vbLf & _ 
 			"This Part was not configured.  See a Vault Admin for more information.  ", "Total File Length Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-		If noWrite = True
-			oAppend.WriteLine("ERROR Total File Length")
-			oAppend.Flush()
-			oAppend.Close()
-		End If
+		' If noWrite = True
+			' oAppend.WriteLine("ERROR Total File Length")
+			' oAppend.Flush()
+			' oAppend.Close()
+		' End If
+		jsonPayload = jsonPayload & """," & """PartNumberOrMessage"":""" & "ERROR Total File Length" & "}"
+		PostLog (jsonPayload)
 		Exit Sub
 	End If
 	
@@ -176,29 +238,32 @@ Sub Main()
 		Else
 			MessageBox.Show("Please rename the file in Vault so the part number and file name match.  ", "File\Part Number Mismatch", MessageBoxButtons.OK, MessageBoxIcon.Warning)
 		End If
-		
 	End If
 
 		'Check Part Number Length
 	If Len(pPN.Value) > 50 Then
 		MessageBox.Show("The entered part number is longer than 50 characters, and cannot be entered in Epicor.  " & vbLf & _
 			"Please ensure that the part description in not included in the Part Number field.  Please correct and re-run config.  ", "Smart Part Config",MessageBoxButtons.OK, MessageBoxIcon.Error)
-		If noWrite = False
-			oAppend.WriteLine("Part Number Length Error")
-			oAppend.Flush()
-			oAppend.Close()
-		End If
+		' If noWrite = False
+			' oAppend.WriteLine("Part Number Length Error")
+			' oAppend.Flush()
+			' oAppend.Close()
+		' End If
+		jsonPayload = jsonPayload & """," & """PartNumberOrMessage"":""" & "Part Number Length Error" & "}"
+		PostLog (jsonPayload)
 		Exit Sub
 	End If
 	
 	If Len(pMatNum.Value) > 50 Then
 		MessageBox.Show("The entered Material Number is longer than 50 characters, and cannot be entered in Epicor.  " & vbLf & _
 			"Please correct and re-run config.  ", "Smart Part Config",MessageBoxButtons.OK, MessageBoxIcon.Error)
-		If noWrite = False
-			oAppend.WriteLine("Material Number Length Error")
-			oAppend.Flush()
-			oAppend.Close()
-		End If
+		' If noWrite = False
+			' oAppend.WriteLine("Material Number Length Error")
+			' oAppend.Flush()
+			' oAppend.Close()
+		' End If
+		jsonPayload = jsonPayload & """," & """PartNumberOrMessage"":""" & "Material Number Length Error" & "}"
+		PostLog (jsonPayload)
 		Exit Sub
 	End If
 	'///////////////////////////////////////////////////////
@@ -227,17 +292,24 @@ Sub Main()
 	End If
 	
 	
-	
-	'Configure tapped hole modeling parameters
-	oDoc.ModelingSettings.TappedHoleDiameter = 21764 'Tap Drill
+	Try
+		'Configure tapped hole modeling parameters
+		oDoc.ModelingSettings.TappedHoleDiameter = 21764 'Tap Drill
 		'kThreadMajorDiameter = 21761
 		'kThreadMinorDiameter = 21762
 		'kThreadPitchDiameter = 21763
 		'kThreadTapDrillDiameter = 21764
+	Catch
+		MessageBox.Show("There was an error in setting the Modeling of tapped holes.  Contact #help_inventor for assistance.  The rule will continue.", "Tapped Hole Modeling Error", MessageBoxButtons.OK)
+	End Try
+	
+	
+	If oDoc.UnitsOfMeasure.LengthDisplayPrecision < 3 Then
 		
-	If oDoc.UnitsOfMeasure.LengthDisplayPrecision <> 3 Then
-		MsgBox("The document precision was incorrect.  Check yo holes!")
 		oDoc.UnitsOfMeasure.LengthDisplayPrecision = 3.123
+		MsgBox("The document precision was incorrect.  Check yo holes!")
+		MsgComp = MsgComp & "ERROR Tapped Hole Setting|"
+		
 	End If
 	
 	' Set 'make' or 'buy'
@@ -248,9 +320,16 @@ Sub Main()
 	Else
 		pMB.Value = "Make"
 		oCompDef.BOMStructure = 51970 'Set makes to 'normal' BOM structure
-	End If		
+	End If
 	
-	'concatenate Operations from parameters, to iProperty
+	'/////////////////////TODO////////////////////////////////////
+	'Check if OPS were filled manually, parse the ops, and set parameters
+	'If pOPS.Value Is Not Nothing And If Parameter("OP1") is Nothing Then
+		'parse pOPS.value into list of strings, by ~'s
+		'search parameter values for OPS
+		'assign the parameters to the operations specified.
+			
+	'concatenate Operations from parameters, write to iProperty
 	If Parameter("OP1") <> " " Then 
 		pOPS.Value = Parameter("OP1")
 	Else 
@@ -330,30 +409,29 @@ Sub Main()
 			End If
 		End If
 	End If
-	'This should move to a new rule.  ????????
+
 	'Look for a configuration that appears to be an epart, and suggest adding ops, if necessary
-	Dim epart as Boolean = True
-	Dim debug as Boolean = True
-	If pPN.Value.Length >= 7 AndAlso pMB.Value = "Buy" AndAlso pOPS.Value.Length > 5 Then
-		epart = InputRadioBox("Are you making an Epicor Manufactured Part?", "Yes, Products RULE!", "No, I hate saving money. ", epart, "iLogic")
-		If epart = True Then
-			pOPS.Value = "OP027:CNC Program~" & pOPS.Value
+	'OBSOLETE as of 20251203 - No operations are to be appended for eparts
+	' Dim epart as Boolean = True
+	
+	' If pPN.Value.Length >= 7 AndAlso pMB.Value = "Buy" AndAlso pOPS.Value.Length > 5 Then
+		' epart = MessageBox.Show("Are you making an Epicor Manufactured Part?", "Methodized Part?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) 'InputRadioBox("Are you making an Epicor Manufactured Part?", "Yes, Products RULE!", "No, I hate saving money. ", epart, "iLogic")
+		' If epart = vbYes Then
+			' MsgComp = MsgComp & "EPart|"
 			
-			ErrComp = ErrComp & "EPart|"
+			' 'Prompt "Is this a control part"
+			' cpart = MessageBox.Show("Is this a Control Part?", "Append Control Fab?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) 'InputRadioBox("Is this a Control Part?", "Yes, im awesome", "No, im a loser", True, "Control Rules" )
+			' If cpart = vbYes Then
+				' pOPS.Value = pOPS.Value & "OP062:Control – Fabrication~"
+				' MsgComp = MsgComp & "Control EPart|"
+			' End If
+			' MsgBox("Operations appended.  Remember to mark the last operation as ""Final"".  " & vbLf)' & _
+			' '"If the part has in-house router or mill operations, check the iProperties for time estimates.  ")
 			
-			'Prompt "Is this a control part"
-			cpart = InputRadioBox("Is this a Control Part?", "Yes, im awesome", "No, im a loser", True, "Control Rules" )
-			If cpart = True Then
-				pOPS.Value = pOPS.Value & "OP062:Control – Fabrication~"
-				ErrComp = ErrComp & "Control EPart|"
-			End If
-			MsgBox("Operations appended.  Remember to mark the last operation as ""Final"".  " & vbLf & _
-			"If the part has in-house router or mill operations, check the iProperties for time estimates.  ")
-			
-		End If
-	Else
-		'MsgBox("This part is not correctly configured to be an Epicor part.  "
-	End If
+		' End If
+	' Else
+		' 'MsgBox("This part is not correctly configured to be an Epicor part.  "
+	' End If
 	
 	'measure bounding box, flat pattern for sheet metal parts.  
 	If oDoc.SubType = "{9C464203-9BAE-11D3-8BAD-0060B0CE6BB4}" Then ' Determine if part is Sheet Metal
@@ -379,7 +457,12 @@ Sub Main()
 	pLength.Value = String.Format(Round(oUOM.ConvertUnits(sizes(2), oUnitsEnum, 11272), 1))
 	pWidth.Value = String.Format(Round(oUOM.ConvertUnits(sizes(1), oUnitsEnum, 11272), 1))
 	pThick.Value = String.Format(Round(oUOM.ConvertUnits(sizes(0), oUnitsEnum, 11272), 1))
-
+	
+	pLengthmm.Value = String.Format(Round(oUOM.ConvertUnits(sizes(2), oUnitsEnum, 11269), 1))
+	pWidthmm.Value = String.Format(Round(oUOM.ConvertUnits(sizes(1), oUnitsEnum, 11269), 1))
+	pThickmm.Value = String.Format(Round(oUOM.ConvertUnits(sizes(0), oUnitsEnum, 11269), 1))
+	
+	
 	'Auto Fill creation date field with todays date
 	pCreateDate.Value = DateString
 	pApprovedDate.Value = DateString
@@ -388,14 +471,31 @@ Sub Main()
 	'Set BOM Quantity to each (Frame generator length based parts)
 	oCompDef.BOMQuantity.SetBaseQuantity(BOMQuantityTypeEnum.kEachBOMQuantity)
 	
-	'run rule to fill values for machining estimation
-	If ThisApplication.UserName = "Cody Redding" Then
-		iLogicVb.RunExternalRule("Time Estimate.iLogicVb") 'not ready for primetime
-		'MsgBox("You are AWESOME!")
+	
+	'Reset parameters to enforce consistency across model states, if enabled.  
+	If oModelStates.MemberEditScope = "57602" Then
+			pPN.Value = pPN.Value
+			pDesc.Value = pDesc.Value
+			pMB.Value = pMB.Value
+			pMatNum.Value = pMatNum.Value
+			pMatDesc.Value = pMatDesc.Value
+			pOPS.Value = pOPS.Value
+			pRev.Value = pRev.Value
+			
+			Parameter("MB") = Parameter("MB")
+			Parameter("OP1") = Parameter("OP1")
+			Parameter("OP2") = Parameter("OP2")
+			Parameter("OP3") = Parameter("OP3")
+			Parameter("OP4") = Parameter("OP4")
+			
 	End If
 	
 	'Save Document
-	ThisDoc.Save
+	Try
+		ThisDoc.Save
+	Catch
+		MessageBox.Show("Unable to save file.  Please make sure the file is checked out, and save the file.  ", "Write Access Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+	End Try
 	
 	'Write out part values, if writing is enabled.  
 	If noWrite = False
@@ -408,7 +508,27 @@ Sub Main()
 		oAppend.Close()
 	End If
 	
-	
+	jsonPayload = jsonPayload & _ 
+		"""PartNumberOrMessage"":""" & pPN.Value & """," & _
+		"""Revision"":""" & pRev.Value & """," & _
+		"""PartDesc"":""" & pDesc.Value.Replace(ControlChars.Quote, Chr(92) & Chr(34)) & """," & _
+		"""MakeBuy"":""" & pMB.Value & """," & _
+		"""Length"":""" & pLength.Value & """," & _
+		"""Width"":""" & pWidth.Value & """," & _
+		"""Thick"":""" & pThick.Value & """," & _
+		"""MtlNum"":""" & pMatNum.Value & """," & _
+		"""MtlDesc"":""" & pMatDesc.Value & """," & _
+		"""OP1"":""" & Parameter("OP1") & """," & _
+		"""OP2"":""" & Parameter("OP2") & """," & _
+		"""OP3"":""" & Parameter("OP3") & """," & _
+		"""OP4"":""" & Parameter("OP4") & """," & _
+		"""Message"":""" & MsgComp & """" & _
+		"}"
+		
+	PostLog (jsonPayload)
+		 
+	' My.Computer.Audio.Play("https://froods.ca/~dschaub/AppleSounds/Startup/StartupMacQuadraAV.wav")
+	 
 End Sub 
 
 
@@ -423,3 +543,18 @@ End Function
 Function DocumentFileNameExt(Doc as Document) As String
 	DocumentFileNameExt = IO.Path.GetFileName(Doc.FullFileName)
 End Function
+
+Sub PostLog(jsonPayload as String)
+	'MsgBox(jsonPayload)
+	
+	dim logUrl as String = "https://script.google.com/macros/s/AKfycbxZkgd0ticjJU_XpK5WBDxoJyDmmjRqS0Yfe2Nrmxls0HFoIpbvNprUQ9ChRAb07FGV/exec"
+	
+	Try
+		Dim wc As New System.Net.WebClient
+		wc.Headers.Add("Content-Type", "application/json")
+		wc.UploadString(logUrl, "POST", jsonPayload)
+	Catch ex As Exception
+		'MessageBox.Show("Log failed: " & ex.Message)
+	End Try
+	
+End Sub 'PostLog
