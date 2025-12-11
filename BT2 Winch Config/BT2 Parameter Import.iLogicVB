@@ -1,0 +1,174 @@
+'BT winch parameter import rule
+'imports parameters from BT winch spreadsheet to parameter part for BT winch confir
+
+'WORKFLOW
+'	- User selects Winch Spreadsheet to import from, in the parameter part of the copied winch design
+'	- Rule reads values from the spreadsheet, fills parameter values in part
+
+'Other considerations
+'	- error handling to ensure spreadsheet is closed on error
+
+'Class definitions
+AddReference "Microsoft.Office.Interop.Excel"
+
+Sub Main()
+	
+	Dim ParaFile as String
+	Dim SheetName As String = "Model Parameters"
+	Dim ParameterList as New List (Of String)
+	
+	'user selects File
+	'store file path to property for future use
+	'msgbox(iProperties.Value("Custom", "ST312 Location").Length)
+	If iProperties.Value("Custom", "ST312 Location").Length > 6 Then 'C:\Box is 6 characters
+		
+		prompt = MessageBox.Show("A previously entered file was found, " & iProperties.Value("Custom", "ST312 Location") & ".  Would you like to use it?", "Use Last File?", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+	
+		If prompt  = vbYes Then
+			ParaFile = iProperties.Value("Custom", "ST312 Location")
+		End If
+		
+	End If
+	
+	If ParaFile = "" Then
+		ParaFile = BrowseToFile()
+		iProperties.Value("Custom", "ST312 Location") = ParaFile
+		'msgbox(ParaFile)
+		
+		'confirm file is valid
+		If ParaFile = "" Then
+			MessageBox.Show("No file was selected", "No File", MessageBoxButtons.OK)
+			Exit Sub
+		End If
+			
+	End If
+	
+		
+	'check for existance of parameters
+	'add parameters as needed
+	'defer updates during import
+	
+	'Open the Excel File
+	Dim xlApp as Microsoft.Office.Interop.Excel.Application
+	Dim openedByRule as Boolean = False
+	
+	On Error Resume Next
+	
+	xlApp = GetObject(, "Microsoft.Office.Interop.Excel.Application")
+	
+	If Err.Number <> 0 Then
+	
+		Err.Clear
+		
+		xlApp = CreateObject("Excel.Application")
+		openedByRule = True
+		
+		If Err.Number <> 0 Then	
+			MsgBox("Cannot access Excel")
+			Exit Sub
+		End If
+		
+	End If
+	
+	xlApp.Visible = False
+	
+	'open excel file
+	Dim wb as Microsoft.Office.Interop.Excel.Workbook = xlApp.Workbooks.Open(ParaFile)
+	
+	If Err.Number <> 0 Then
+		MsgBox("Unable to open the file, likely because it is in use by someone else.  Please try again. ") '& vbLf & "Error: " & Err.Number & " - " & Err.Description
+		If openedByRule Then 
+			xlApp.Quit
+		End If
+		
+		Exit Sub
+	End If
+	
+	Dim ws as Microsoft.Office.Interop.Excel.Worksheet = wb.Worksheets.Item(SheetName)
+	
+	If Err.Number <> 0 Then
+		MsgBox("Unable to get the sheet.  Please try again.  ")
+		If openedByRule Then 
+			xlApp.Quit
+		End If
+	End If 
+
+	
+
+	ParameterList.Add("ELL")
+	ParameterList.Add("STROKE")
+	ParameterList.Add("SPEED")
+	ParameterList.Add("OVERALL_LENGTH")
+	ParameterList.Add("LINES_NO")
+	ParameterList.Add("TAPPED_HOLES_NO")
+	ParameterList.Add("LSCREW_LENGTH")
+	ParameterList.Add("LSCREW_SHOULDER")
+	ParameterList.Add("CHAS_CHAN_LENGTH")
+	ParameterList.Add("CARR_SLIDE_LENGTH")
+	ParameterList.Add("XGROOVE_CHAN_LENGTH")
+	ParameterList.Add("CONT_TUBE_LENGTH")
+	ParameterList.Add("CONT_TUBE_POS")
+	ParameterList.Add("SIDE_UNI_LENGTH")
+	ParameterList.Add("SIDE_CHAN_LENGTH")
+	ParameterList.Add("CHAS_SIDE_PLATE")
+	ParameterList.Add("SWR_DIA")
+	ParameterList.Add("GROOVE_DIA")
+	ParameterList.Add("PITCH")
+	ParameterList.Add("SWR_PCD")
+	ParameterList.Add("DRUM_OD")
+	ParameterList.Add("DRUM_LENGTH")
+	ParameterList.Add("ROPE_SPACING")
+	ParameterList.Add("TAP_DEPTH")
+	ParameterList.Add("HOLE_POS_1")
+	ParameterList.Add("HOLE_POS_2")
+	ParameterList.Add("HOLE_POS_3")
+	ParameterList.Add("HOLE_POS_4")
+	ParameterList.Add("TAKE_OFF_POS")
+	ParameterList.Add("SS")
+	ParameterList.Add("MIN_ROPE_TURNS")
+	ParameterList.Add("GBOX_FTO_REF")
+	ParameterList.Add("LSCREW_FTO_REF")
+	ParameterList.Add("ROPE_REEVING_END")
+	ParameterList.Add("DRUM_ROTATION")
+	ParameterList.Add("DRUM_TAP_SIZE")
+	ParameterList.Add("SCROLL_MINOR_DIA")
+	
+	'import parameters from Excel
+	
+	Dim Row as Integer = 1
+	Dim val
+	
+	For Each p as String In ParameterList
+		val = ws.Cells(Row, 2).Value
+		'msgBox(val)
+		
+		Parameter(p) = val
+		
+		Row = Row + 1
+	Next
+	
+	wb.Close(False)
+	'close excel File
+	'catch errors and ensure excel file is closed
+	
+	MsgBox("Import Complete!")
+	
+End Sub 'Main
+
+
+Function BrowseToFile()
+
+	Dim oFileDlg As Inventor.FileDialog = Nothing
+	InventorVb.Application.CreateFileDialog(oFileDlg)
+	oFileDlg.Filter = "Excel Files (*.xls, *.xlsx, *.xlsm)|*.xlsm;*.xls;*.xlsx"	'|All Files (*.*)|*.*"
+	oFileDlg.DialogTitle = "Select File to Import"
+	oFileDlg.InitialDirectory = "C:\Box" 'IO.Path.GetFullPath(ThisApplication.ActiveDocument.FullFileName)
+	oFileDlg.CancelError = False
+	oFileDlg.MultiSelectEnabled = False
+	
+	'Open Dialog
+	oFileDlg.ShowOpen()
+	
+	Return oFileDlg.FileName
+	
+End Function 'BrowseToFile

@@ -1,0 +1,591 @@
+
+'AUTHOR: Cody Redding
+'CONTACT: codered741@gmail.com
+
+	'Purpose: Execute border swap on all drawings for the Porter Project
+				' Searches BOM for files, search for drawings that match, open each drawing, replace the Border, add and change properties appropriately, save and close
+
+Imports System.IO
+Imports System.IO.File
+Imports System.IO.Path
+Imports System.Text	
+'Imports System.Collections
+Imports System.Windows.Forms
+Imports My.Computer.FileSystem
+
+'AddReference "C:\Program Files\PDFCreator\PDFCreator.ComWrapper.dll"
+'Imports pdfforge.PDFCreator.UI.ComWrapper
+	
+Sub Main()
+	
+	SharedVariable("LogVar") = "Special - Porter Title Block Batch Update"
+	iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+	
+	'On Error GoTo errhandle
+	
+	'read in the path to the templates and test that it Exists
+	dim strTemplatesPath as String = "C:\_vaultWIP\Designs\Templates\" 'getTemplatesFolderPath()
+	'messagebox.show(strTemplatesPath)
+	If strTemplatesPath.Length = 0 Then
+		MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		Exit sub
+	End if	
+	
+	'Deactivate Vault Addin
+	Dim VaultAddin As Inventor.ApplicationAddIn = ThisApplication.ApplicationAddIns.ItemById("{48B682BC-42E6-4953-84C5-3D253B52E77B}")
+	'VaultAddin.Deactivate()
+	
+	'Declare variables
+	Dim oDoc as Document = ThisApplication.ActiveDocument
+	Dim oCustPropSet as PropertySet = oDoc.PropertySets.Item("Inventor User Defined Properties")
+	Dim oDesProps as PropertySet = oDoc.PropertySets.Item("Design Tracking Properties")
+	Dim oCtrlDef as ControlDefinitions = ThisApplication.CommandManager.ControlDefinitions
+	'Dim pJobNum  = oCustPropSet.Item("JobNum")
+	'Dim pBuildingNum = oCustPropSet.Item("Building Number")
+	' Dim pUsedOn '= oCustPropSet.Item("UsedOn")
+	' Dim pNextAssy '= oCustPropSet.Item("NextAssy")
+	'Dim pPrjNum = oCustPropSet.Item("Project Number")
+	'Dim pDesLvl = oCustPropSet.Item("DesignLevel")
+	'Dim Project = oDesProps.Item("Project")
+	Dim BOMList As New List(Of String)
+	Dim DrawingsList as New List(Of String)
+	Dim ShowNum as String
+	Dim TemplateFile as String
+	Dim oTemplateDoc as Document
+	Dim TemplateTBName1 As String
+	Dim TemplateTBName2 As String
+	Dim ParkSelect as String
+	'Dim oBorderDef as BorderDefinition = oDoc.BorderDefinitions.Item("UNIVERSAL BORDER - FULL")
+	Dim oTitleTBDef as TitleBlockDefinition '= oDoc.TitleBlockDefinitions.Item("UNIVERSAL BOURNE Title/Part")
+	Dim oAddPageDef as TitleBlockDefinition '= oDoc.TitleBlockDefinitions.Item("UNIVERSAL BOURNE Kit Add")
+	Dim DwgSheets as Sheets
+	Dim DwgSheet as Sheet
+	Dim SheetCount as Integer
+	Dim DwgCustProps as PropertySet
+	Dim pDwgUsedOn 
+	Dim pDwgNextAssy
+	Dim DwgDoc as Document
+	Dim DwgModelFile As Inventor.File
+	Dim DwgModelDoc as Document
+	Dim ExportDWG
+	Dim PDFCreatorQueue As Queue = New Queue
+	Dim job As Object
+	Dim fullPath As String
+
+	
+	
+	' Dim ParkList as New List(Of String)
+		' ParkList.Add("Osaka")
+		' ParkList.Add("Hollywood")
+		' ParkList.Add("Orlando")
+	
+	' If pDesLvl.Value = "Kit" OrElse pDesLvl.Value = "Element" Then
+	' Else
+		' MsgBox("This rule should only be run from a Kit or Element.  Exiting.  ")
+		' Exit Sub
+	' End If
+	
+	'Warn user of time commitment, allow opt out.  
+	usrContinue = MessageBox.Show("The title block swap process can be time consuming, and cannot be stopped once started.  Please ensure all relevant drawings exist in their current form in your WIP folder.  Are you sure you want to continue?", "Time Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
+	
+	If usrContinue = vbNo Then
+		MsgBox("Exiting")
+		Exit Sub
+	End If	
+	
+	Dim FileSuffix as String = "" 'InputBox("Please enter desired file suffix.  ", "File Suffix", "")
+	
+	If FileSuffix.Length > 0 Then
+		FileSuffix = " - " & FileSuffix
+	End If
+	
+	'Extract Show Number from Kit.  For use in used on and next assembly
+	'ShowNum = Left(pJobNum.Value, InStr(pJobNum.Value, "-")-1)
+
+	'Check if we are in an Assembly
+	If oDoc.DocumentType <> kAssemblyDocumentObject Then
+		MsgBox("Active Document is not an Assembly.  Please run from an Assembly. ")
+		Exit Sub
+	End If
+		
+	'allow user to pick park from list
+		'correlate park to corresponding title block for swapping
+		'specify file name, and title block name to apply
+	' ParkSelect = ParkList(0) 'InputListBox("Please select the part to export drawings for: ", ParkList, ParkList(2), Title:= "Select Park", ListName := "Available Parks")
+	
+	
+	' Select Case ParkSelect
+	' Case ParkList(0) 'Osaka
+		TemplateFile = strTemplatesPath & "Metric\UK TEST BORDER.dwg" 
+		TemplateBdrName1 = "TAIT MDE - PART/SUB-ASSY - BORDER"
+		'TemplateTBName2 = ""
+	' Case ParkList(1) 'Hollywood
+		' TemplateFile = "C:\_vaultWIP\Designs\Templates\Universal\US_HOLLYWOOD\_USH_STANDARD TEMPLATE_SIZE B_11x17.idw"
+		' TemplateTBName1 = ""
+		' TemplateTBName2 = ""
+	' Case ParkList(2) 'Orlando
+		' TemplateFile = "C:\_vaultWIP\Designs\Templates\Universal\US_FLORIDA\_USF_STANDARD TEMPLATE_SIZE B_11x17.idw"
+		' TemplateTBName1 = "UNIVERSAL FLORIDA MAIN SHEET"
+		' TemplateTBName2 = "UNIVERSAL FLORIDA 2ND SHEET"
+	' End Select
+	
+	' ExportDWG = vbNo 'MessageBox.Show("Do you want to export 2D DWG's of the drawings?", "Export DWG's?", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+	
+	'Create Folder for Drawing Export (User Desktop)
+	'Dim ExportPath as String = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Desktop) & "\HKDL CSS\" & pJobNum.Value & "\" & Now.ToString("yyyyMMddHHmm") & "\"
+	'Directory.CreateDirectory(ExportPath)
+	
+	'Add current Document to Search List
+	'BOMList.Add(oDoc.FullFileName)
+	
+	'Get all documents from BOM 
+	GetDocsFromBOM(oDoc, BOMList)
+	
+	Dim oProgressBar as Inventor.ProgressBar
+	oProgressBar = ThisApplication.CreateProgressBar(False, BOMList.Count, "Finding Drawings...")
+	oProgressBar.Message = "Checking for drawing of " & oDoc.FullFileName
+	oProgressBar.UpdateProgress
+	
+	Dim mDoc as Document
+	'Attempt to find a drawing of model documents, add to list if found
+	For Each BomDoc In BOMList
+		DwgFile = FindDrawingFilePN(ThisApplication.Documents.ItemByName(BomDoc))
+		oProgressBar.Message = "Updating OPS" & BOMDoc
+		oProgressBar.UpdateProgress
+		If DwgFile.Length > 5 Then
+			DrawingsList.Add(DWGFile)
+		End If
+		
+		mDoc = ThisApplication.Documents.Open(BomDoc, True)
+		oCtrlDef.Item("VaultCheckoutTop").Execute
+		mDocParams = mDoc.ComponentDefinition.Parameters.UserParameters
+		mOP1 = mDocParams.Item("OP1")
+		mOP2 = mDocParams.Item("OP2")
+		mOP3 = mDocParams.Item("OP3")
+		mOP4 = mDocParams.Item("OP4")
+		
+		mOP1.Value = "OP023:OS - 2D Laser~"
+		
+		mDocCustomProps = mDoc.PropertySets.Item("Inventor User Defined Properties")
+		mDocOps = mDocCustomProps.Item("OPS")
+		
+		'concatenate Operations from parameters, to iProperty
+		If mOP1.Value <> " " Then 
+			mDocOps.Value = mOP1.Value
+		End If
+		
+		If mOP2.Value <> " " Then 
+			mDocOps.Value = mDocOps.Value & mOP2.Value
+		End If
+		
+		If mOP3.Value <> " " Then 
+			mDocOps.Value = mDocOps.Value & mOP3.Value
+		End If
+		
+		If mOP4.Value <> " " Then 
+			mDocOps.Value = mDocOps.Value & mOP4.Value
+		End If
+		
+		mDoc.Save()
+		'oCtrlDef.Item("VaultCheckinTop").Execute
+		mDoc.Close()
+	Next 
+	
+	oProgressBar.Close
+		
+	
+	'Setup Open file Options
+	Dim oOptions as NameValueMap = ThisApplication.TransientObjects.CreateNameValueMap
+		oOptions.Value("DeferUpdates") = True
+		oOptions.Value("FastOpen") = True
+		
+	'Open the Template File to access drawing resources
+	oTemplateDoc = ThisApplication.Documents.OpenWithOptions(TemplateFile, oOptions, False)
+
+	'configure PDF export options
+	' oPDFAddIn = ThisApplication.ApplicationAddIns.ItemById("{0AC6FD96-2F4D-42CE-8BE0-8AEA580399E4}")
+	' oContext = ThisApplication.TransientObjects.CreateTranslationContext
+	' oContext.Type = IOMechanismEnum.kFileBrowseIOMechanism
+	' oPDFOptions = ThisApplication.TransientObjects.CreateNameValueMap
+	' oDataMedium = ThisApplication.TransientObjects.CreateDataMedium
+
+	' If oPDFAddIn.HasSaveCopyAsOptions(oDataMedium, oContext, oOptions) Then
+		' oPDFOptions.Value("All_Color_AS_Black") = 0
+		' oPDFOptions.Value("Remove_Line_Weights") = 1
+		' oPDFOptions.Value("Vector_Resolution") = 400
+		' oPDFOptions.Value("Sheet_Range") = Inventor.PrintRangeEnum.kPrintAllSheets
+	' End If
+	' If PDFCreatorQueue.Count > 0 Then
+		' PDFCreatorQueue.ReleaseCom()
+	' End If
+	
+	' PDFCreatorQueue.Initialize()
+	
+	oProgressBar = ThisApplication.CreateProgressBar(False, DrawingsList.Count, "Updating Drawings...")
+	
+	'Open each drawing (Fast open, defer updates) to do updates and export drawing
+	For Each Dwg in DrawingsList
+		'Open Drawing
+		
+		oProgressBar.Message = "Updating drawing file: " & Dwg
+		oProgressBar.UpdateProgress
+		
+		DwgDoc = ThisApplication.Documents.Open(Dwg, True)
+		
+		oCtrlDef.Item("VaultCheckoutTop").Execute
+		oCtrlDef.Item("UpdateCopiedModeliPropertiesCmd").Execute
+		'oCtrlDef.Item("UpdateStylesCmd").Execute
+	
+		'DwgModelFile = DwgDoc.File.ReferencedFiles.Item(1)
+		'need to add check to see if referenced file is IPT/IAM.  
+		' For Each Ref in DwgDoc.File.ReferencedFiles
+			' If Ref.FullFileName.Contains(".iam") Then
+				' DwgModelFile = Ref
+				' Exit For
+			' End If
+		' Next
+		
+		' If DwgModelFile Is Nothing
+			' For Each Ref in DwgDoc.File.ReferencedFiles
+				' IF Ref.FullFileName.Contains(".ipt") Then
+					' DwgModelFile = Ref
+					' Exit For
+				' End If
+			' Next
+		' End If
+		
+		' If DwgModelFile Is Nothing
+			' MessageBox.Show("A problem occurred in getting the model for this drawing.  Exiting.  ", "Model Problem", MessageBoxButtons.OK, MessageBoxIcon.Error)
+			' Exit Sub
+		' End If
+		
+		' 'Msgbox(DwgModelFile.FullFileName)
+		' DwgModelDoc = ThisApplication.Documents.Open(DwgModelFile.FullFileName, False)
+		DwgCustProps = DwgDoc.PropertySets.Item("Inventor User Defined Properties")
+		DwgDesProps = DwgDoc.PropertySets.Item("Design Tracking Properties")
+		' pDwgNextAssy = DwgCustProps.Item("NextAssy")
+		' pDwgUsedOn = DwgCustProps.Item("UsedOn")
+		
+		Try
+			DwgCustProps.Add("Custom", "DRAWING_STANDARD")
+		Catch
+		End Try
+		
+		Try
+			DwgCustProps.Add("Custom", "MFG_STANDARD")
+		Catch
+		End Try
+
+		Try
+			DwgCustProps.Add("Custom", "DRAWING_UNITS")
+		Catch
+		End Try
+			
+		DwgCustProps.Item("DRAWING_UNITS").Value = "mm"
+		DwgCustProps.Item("MFG_STANDARD").Value = "EXC2"	
+		DwgCustProps.Item("DRAWING_STANDARD").Value = "ISO"
+		
+		BorderCopy(oTemplateDoc, DwgDoc, TemplateBdrName1)
+		
+		'Copy Title Block(s)
+		'oTitleTBDef = BorderCopy(oTemplateDoc, DwgDoc, TemplateBdrName1)
+		
+		'oAddPageDef = TitleBlockCopy(oTemplateDoc, DwgDoc, TemplateTBName1)
+		
+		'Get Sheets Object
+		' DwgSheets = DwgDoc.Sheets
+		' SheetCount = 1
+
+		' 'Replace Title Block on each page, using a different title block after page 1
+		' For Each Sheet In DwgSheets
+			' If SheetCount <= DwgSheets.Count Then
+
+				' DwgSheet = DwgDoc.Sheets.Item(SheetCount)
+				' DwgSheet.Activate
+				' DwgSheet.Border.Delete
+				' DwgSheet.AddBorder(oBorderDef)
+				' 'DwgSheet.TitleBlock.Delete
+				
+				' If SheetCount = 1 Then
+					' DwgSheet.AddTitleBlock(oTitleTBDef)
+				' Else 					
+					' DwgSheet.AddTitleBlock(oTitleTBDef)
+				' End If
+				
+				' SheetCount = SheetCount + 1
+				
+			' End If
+		' Next
+		
+		
+		
+		'Update Used On, Next Assy, Building Number, Project, etc.
+		'only change show number in used on and next assy if it references a kit/element! Check for "-"
+		' If pDwgNextAssy.Value.Contains("-") Then
+			' pDwgNextAssy.Value = ShowNum & Right(pDwgNextAssy.Value, InStr(pDwgNextAssy.Value, "-") + 1)
+		' End If
+		
+		' IF pDwgUsedOn.Value.Contains("-") Then
+			' pDwgUsedOn.Value = ShowNum & Right(pDwgUsedOn.Value, InStr(pDwgUsedOn.Value, "-") + 1)
+		' End If
+		
+		'overwrite building number from kit
+		'DwgCustProps.Item("Building Number").Value = pBuildingNum.Value
+		
+		'overwrite project number 
+		'should not be necessary (SMLYDK is always SMLYDK, MK is Always MK)??? CONFIRM!!!
+		' DwgCustProps.Item("Project Number").Value = pPrjNum.Value
+		
+		'Update display
+		DwgDoc.Update2(True)
+		
+		'Export DWG to Desktop folder
+			'get XML to to pack and go
+		' If ExportDWG  = vbYes Then
+			' DwgDoc.SaveAs(ExportPath & DwgDesProps.Item("Part Number").Value & FileSuffix & ".dwg", True)
+		' End If
+		
+		'Export PDF To Desktop folder
+		 'oDataMedium.FileName = ExportPath & DwgDesProps.Item("Part Number").Value & FileSuffix & ".pdf"
+		 'oPDFAddIn.SaveCopyAs(DwgDoc, oContext, oPDFOptions, oDataMedium)
+		'DwgPrint("PDFCreator")
+		
+		'Close Drawing without saving
+		'DwgModelDoc.Close(True)
+		
+		Try
+			DwgDoc.Save
+			'oCtrlDef.Item("VaultCheckinTop").Execute
+			DwgDoc.Close(False)
+		Catch
+			Msgbox("Error saving this file.  Check to see if it is Released in Vault, and try again.  The process will continue.  ")
+			DwgDoc.Close(True)
+		End Try
+	Next
+	
+	oProgressBar.Close
+	
+	' If Not PDFCreatorQueue.WaitForJobs(DrawingsList.Count, DrawingsList.Count * 5) Then
+			' MsgBox("The print job did not reach the queue within the allotted time.  ")
+		' Else
+		
+			' PDFCreatorQueue.MergeAllJobs
+			' 'MsgBox("Currently there are " & PDFCreatorQueue.Count & " job(s) in the queue")
+			' 'MsgBox("Getting job instance")
+			' job = PDFCreatorQueue.NextJob
+			
+			' 'MsgBox("Setting Default GUID")
+			' job.SetProfileByGuid("DefaultGuid")
+			
+			' 'MsgBox("Checking for existing file")
+			' If System.IO.File.Exists(ExportPath & oDesProps.Item("Part Number").Value & ".pdf") Then 'If document exists, prompt user to overwrite
+				' MessageBox.Show("A File already exists with this name, and will be overwritten!", "Batch Plot", MessageBoxButtons.OK, MessageBoxIcon.Information)
+				' System.IO.File.Delete(ExportPath & oDesProps.Item("Part Number").Value & ".pdf")
+				' 'msgbox("deleted")
+			' End If
+			
+			
+			' 'MsgBox("Converting under ""DefaultGuid"" conversion profile")
+			' job.ConvertTo(ExportPath & oDesProps.Item("Part Number").Value)
+
+			' If (Not job.IsFinished Or Not job.IsSuccessful) Then
+				' MsgBox("Could not convert the file: " & ExportPath & oDesProps.Item("Part Number").Value & ".pdf")
+			' Else
+				' 'MsgBox("Job finished successfully")
+			' End If
+		' End If
+	
+	' PDFCreatorQueue.ReleaseCom()
+	
+	' 'ReActivate Vault Addin	
+errhandle:
+	oTemplateDoc.Close(True)
+	
+	'Display complete message with option to open folder
+	If Err.Number = 0 Then
+		openFolder = MessageBox.Show("The operation completed successfully! Dont forget to check everything in!", "TB Replace Success!", MessageBoxButtons.OK, MessageBoxIcon.Question)
+		' If openFolder = vbYes Then
+			' ThisDoc.Launch(ExportPath)
+		' End If
+	Else 
+		MsgBox("The operation failed.  The Error was: " & Err.Description)
+	End If
+	
+	'VaultAddin.Activate()
+	
+End Sub 'Main
+
+Function BorderCopy(SourceDoc as Document, DestDoc as Document, bdrName as String) As BorderDefinition
+	' Get the new source title block definition.
+
+	Dim oSourceBorderDef As BorderDefinition = SourceDoc.BorderDefinitions.Item(bdrName)
+
+	' Get the new title block definition.
+	Dim oNewBorderDef As BorderDefinition = oSourceBorderDef.CopyTo(DestDoc, True)
+	Return oNewBorderDef
+	
+End Function 'BorderCopy
+
+Function TitleBlockCopy(SourceDoc as Document, DestDoc as Document, tbName as String) As TitleBlockDefinition
+	' Get the new source title block definition.
+
+	Dim oSourceTitleBlockDef As TitleBlockDefinition = SourceDoc.TitleBlockDefinitions.Item(tbName)
+
+	' Get the new title block definition.
+	Dim oNewTitleBlockDef As TitleBlockDefinition = oSourceTitleBlockDef.CopyTo(DestDoc, True)
+	Return oNewTitleBlockDef
+End Function 'TitleBlockCopy
+
+Sub GetDocsFromBOM(oDoc as Document, ByRef BOMDocs as List(of String))
+	
+	If oDoc.DocumentType <> kAssemblyDocumentObject Then
+		MsgBox("This rule can only be run from an assembly")
+		Exit Sub
+	End If
+	
+	Dim oDocBOM As BOM = oDoc.ComponentDefinition.BOM
+
+	oDocBOM.StructuredViewEnabled = True
+	oDocBOM.StructuredViewFirstLevelOnly = False
+	oDocBOM.PartsOnlyViewEnabled = False
+	
+	Dim oBOMView as BOMView = oDocBOM.BOMViews.Item("Structured")	
+	Dim oBOMRows As BOMRowsEnumerator = oBOMView.BOMRows
+	Dim oCompDef As ComponentDefinition
+	Dim oPNProp as Inventor.Property
+	
+	For Each oRow as BOMRow in oBOMRows
+		
+			GetBOMRowDocFile(oRow, BOMDocs)
+		
+	Next 
+	
+	'BOMDocs.Sort()
+	
+End Sub
+
+Sub GetBOMRowDocFile(oRow as BOMRow, ByRef BOMDocs as List(of String))
+	
+	Dim oCompDef As ComponentDefinition
+	
+	'Add the part number of the current row, for parts that have children
+	oCompDef = oRow.ComponentDefinitions.Item(1)
+	
+	If oCompDef.Type = 100675072 Then 'exclude Virtual Components
+		'do nothing
+	Else
+
+		DocName = oCompDef.Document.FullFileName
+
+		If Not BOMDocs.Contains(DocName) Then
+			BOMDocs.Add(DocName)
+		End If
+		
+	End If
+		
+	If Not oRow.ChildRows Is Nothing Then
+	
+		If Not BOMDocs.Contains(DocName) Then
+			BOMDocs.Add(DocName)
+		End If
+	
+		For Each oChildRow as BOMRow in oRow.ChildRows		
+			GetBOMRowDocFile(oChildRow, BOMDocs)
+		Next
+		
+	End If
+	
+End Sub
+
+Function FindDrawingFilePN(PartOrAssemblyDoc As Document) As String
+    Dim fullFilenamePN As String
+    fullFilenamePN = PartOrAssemblyDoc.fullFilename
+   
+    ' Extract the path from the full filename.
+    Dim path As String = ThisApplication.DesignProjectManager.ActiveDesignProject.WorkspacePath
+    'path = Left$(fullFilenamePN, InStrRev(fullFilenamePN, "\"))
+
+	Dim iProps as PropertySet = PartOrAssemblyDoc.PropertySets.Item("Design Tracking Properties")
+	Dim pn = iProps.Item("Part Number")
+	
+    Dim filename As String = pn.Value
+
+    ' Find if the drawing exists.
+    Dim drawingFilename As String
+    drawingFilename = ThisApplication.DesignProjectManager.ResolveFile(path, filename & ".dwg")
+   
+    ' Check the result.
+    If drawingFilename = "" Then
+       
+        ' Find if the drawing exists.
+        drawingFilename = ThisApplication.DesignProjectManager.ResolveFile(path, filename & ".idw")
+   
+        ' Return the result.
+        If drawingFilename <> "" Then
+            Return drawingFilename
+        Else
+            Return ""
+        End If
+    Else
+        ' Return the result.
+         Return drawingFilename
+    End If
+End Function 'FindDrawingFilePN
+
+Function DocumentFileName(Doc As String) As String
+	DocumentFileName = Left(Doc, Doc.Length - 4)
+	'MsgBox(DocumentFileName)
+End Function 'DocumentFileName
+
+Private Sub DwgPrint(PrinterName as String)
+	Dim oPrintMgr As DrawingPrintManager = ThisApplication.ActiveDocument.PrintManager
+	' Get the name of the printer that will be used.
+	oPrintMgr.Printer = PrinterName
+	
+	' Set to print in color.
+	oPrintMgr.ColorMode = 13313 'kPrintColorPalette
+	
+	' Set to print one copies.
+	oPrintMgr.NumberOfCopies = 1
+	
+	' Set to print using landscape orientation.
+	oPrintMgr.Orientation = 13570
+		'13570 'kLandscapeOrientation
+		'13569 'kPortraitOrientation
+	
+	' Set the paper size.
+	oPrintMgr.PaperSize = 14338
+		'14338 'kPaperSize11x17
+		
+	'oPrintMgr.PaperWidth = 431.8
+	'oPrintMgr.PaperHeight = 27.94
+	
+	' Set to print all sheets.
+	oPrintMgr.PrintRange = 14082 'kPrintAllSheets
+	
+	' Set to print full scale.
+	oPrintMgr.ScaleMode = 13825 'kPrintFullScale
+	
+	' Submit the print.
+	oPrintMgr.SubmitPrint
+End Sub 'DwgPrint
+
+Function getTemplatesFolderPath() as string
+	
+	Dim invTempLoc as String = "C:\_vaultWIP\inv_Templates_Path.txt"
+	
+	If System.IO.File.Exists(invTempLoc)
+		Dim oRead as new StreamReader(invTempLoc)
+	
+		Try 
+			return oRead.ReadLine()
+		Catch
+			return 0
+		End Try
+		
+	Else
+		'MessageBox.Show("The template path reference could not be found. ","File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error)
+		return 0
+	End if
+	
+End Function

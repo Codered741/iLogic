@@ -1,0 +1,70 @@
+﻿Sub Main()
+Dim odoc As DrawingDocument
+odoc = ThisApplication.ActiveDocument
+'active sheet
+Dim tmpSheet As Sheet
+tmpSheet = odoc.ActiveSheet
+Dim tmpView As DrawingView
+
+Dim view_asso_draft = 10506
+Dim view_auxillary = 10499
+Dim view_custom = 10498
+Dim view_default = 10497
+Dim view_detail = 10502
+Dim view_draft = 10505
+Dim view_OLE = 10500
+Dim view_overlay = 10507
+Dim view_projected = 10504
+Dim view_section = 10503
+Dim view_standard = 10501
+
+
+'do nothing for these view type
+For Each tmpView In tmpSheet.DrawingViews
+If tmpView.ViewType = view_asso_draft _
+Or tmpView.ViewType = view_auxillary _
+Or tmpView.ViewType = view_custom _
+Or tmpView.ViewType = view_default _
+Or tmpView.ViewType = view_detail _
+Or tmpView.ViewType = view_draft _
+Or tmpView.ViewType = view_OLE _
+Or tmpView.ViewType = view_overlay _
+Or tmpView.ViewType = view_section _
+Then
+
+'name remaing view types as follows
+Else
+Dim myDrawingViewName As String
+'Which text for which orientation
+Select Case tmpView.Camera.ViewOrientationType
+Case ViewOrientationTypeEnum.kBackViewOrientation
+myDrawingViewName = "REAR VIEW"
+Case ViewOrientationTypeEnum.kBottomViewOrientation
+myDrawingViewName = "BOTTOM VIEW"
+Case ViewOrientationTypeEnum.kFrontViewOrientation
+myDrawingViewName = "FRONT VIEW"
+Case ViewOrientationTypeEnum.kIsoBottomLeftViewOrientation
+myDrawingViewName = "ISO VIEW"
+Case ViewOrientationTypeEnum.kIsoBottomRightViewOrientation
+myDrawingViewName = "ISO VIEW"
+Case ViewOrientationTypeEnum.kIsoTopLeftViewOrientation
+myDrawingViewName = "ISO VIEW"
+Case ViewOrientationTypeEnum.kIsoTopRightViewOrientation
+myDrawingViewName = "ISO VIEW"
+Case ViewOrientationTypeEnum.kLeftViewOrientation
+myDrawingViewName = "SIDE VIEW"
+Case ViewOrientationTypeEnum.kRightViewOrientation
+myDrawingViewName = "SIDE VIEW"
+Case ViewOrientationTypeEnum.kTopViewOrientation
+myDrawingViewName = "TOP VIEW"
+Case Else
+myDrawingViewName = ""
+End Select
+'Change if view orientation was found
+If Not myDrawingViewName = "" Then
+'change drawing view name
+tmpView.Name = myDrawingViewName
+End If
+End If
+Next
+End Sub

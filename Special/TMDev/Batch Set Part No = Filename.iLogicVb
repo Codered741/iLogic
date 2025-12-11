@@ -1,0 +1,43 @@
+﻿'Toby Molyneux 2025-12-02
+'DEV Only
+
+
+Sub Main
+
+	Dim oAsmCompDef As AssemblyComponentDefinition
+	oAsmCompDef = ThisApplication.ActiveDocument.ComponentDefinition
+	Dim oOccurrence As ComponentOccurrence
+
+	'Create shared variable for subroutine
+	SharedVariable("nPhase") = nName
+
+	'Call sub Cycle to iterate through assembly
+	 Call Cycle(oAsmCompDef.Occurrences, 1)
+
+	InventorVb.DocumentUpdate
+	MessageBox.Show("Success", "WOOooOO", MessageBoxButtons.OK, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button1)
+	
+End Sub
+
+Sub Cycle(Occurrences As ComponentOccurrences, Level As Integer)
+
+	Dim oAsmCompDef As AssemblyComponentDefinition
+	oAsmCompDef = ThisApplication.ActiveDocument.ComponentDefinition
+	Dim oOccurrence As ComponentOccurrence
+		'Set values in each component
+		For Each oOccurrence In Occurrences
+			Try
+				nName = oOccurrence.Name
+				oOccurrence.PropertySets.Item("Design Tracking Properties").Item("Part Number").Value = nName
+
+
+			Catch
+			End Try
+		'Check subassemblies and update parts inside
+		If oOccurrence.DefinitionDocumentType = kAssemblyDocumentObject Then
+			Call Cycle(oOccurrence.SubOccurrences, Level + 1)	
+		End If	
+		Next
+
+End Sub 'Cycle
+

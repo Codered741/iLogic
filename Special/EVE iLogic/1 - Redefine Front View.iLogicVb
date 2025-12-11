@@ -1,0 +1,63 @@
+﻿ThisApplication.UserInterfaceManager.ShowViewCube = True
+oObj = ThisApplication.CommandManager.Pick(SelectionFilterEnum.kPartFacePlanarFilter, "Select a Flat Face.")
+If oObj Is Nothing OrElse (TypeOf oObj Is Inventor.Face = False) Then Exit Sub
+Dim oFace As Inventor.Face = oObj
+ThisDoc.Document.SelectSet.Clear
+ThisDoc.Document.SelectSet.Select(oFace)
+Dim oCDs As ControlDefinitions = ThisApplication.CommandManager.ControlDefinitions
+oCDs.Item("AppLookAtCmd").Execute2(True)
+oCDs.Item("AppZoomAllCmd").Execute2(True)
+'oCDs.Item("AppViewCubeViewFrontCmd").Execute2(True)
+ThisApplication.ActiveView.SetCurrentAsFront
+
+Dim oCamera As Camera
+'Rotazione del ViewCube
+oCamera = ThisApplication.ActiveView.Camera 
+oCamera.ViewOrientationType = 10764 'Front
+oCamera.Apply
+
+ThisApplication.ActiveView.SetCurrentAsFront
+oCamera.ViewOrientationType = 10760 'IsoTopLeft
+oCamera.Apply
+
+'Settare vista ViewCube su Home
+Dim name2 As String = "AppViewCubeViewHomeFloatingCmd"
+Dim oDef2 As ButtonDefinition = ThisApplication.CommandManager _
+		.ControlDefinitions.Item(name2)
+oDef2.Execute
+
+'zoom all
+ThisApplication.ActiveView.Fit
+
+
+'list of view enums:
+'  kTopViewOrientation = 10754
+'  kRightViewOrientation = 10755
+'  kBackViewOrientation = 10756
+'  kBottomViewOrientation = 10757
+'  kLeftViewOrientation = 10758
+'  kIsoTopRightViewOrientation = 10759
+'  kIsoTopLeftViewOrientation = 10760
+'  kIsoBottomRightViewOrientation = 10761
+'  kIsoBottomLeftViewOrientation = 10762
+'  kFrontViewOrientation = 10764
+
+'List ViewCube
+'AppViewCubeCmd 
+'AppViewCubeHomeCmd 
+'AppViewCubeOrthographicCmd 
+'AppViewCubePerspectiveCmd 
+'AppViewCubePerspectiveOrthoCmd 
+'AppViewCubePropertiesCmd 
+'AppViewCubeViewFrontCmd 
+'AppViewCubeViewHomeFixedCmd 
+'AppViewCubeViewHomeFloatingCmd 
+'AppViewCubeViewLockCurrentSelectionCmd 
+'AppViewCubeViewResetToFrontCmd 
+'AppViewCubeViewTopCmd
+
+'Go to Home
+'Call ThisApplication.ActiveView.GoHome	
+
+
+'https://help.autodesk.com/view/INVNTOR/2021/ENU/?guid=GUID-147686F2-00B0-42AB-A4F8-A970309066DC

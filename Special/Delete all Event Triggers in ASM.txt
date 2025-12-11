@@ -1,0 +1,23 @@
+Sub Main
+
+	Dim oDoc As Document = ThisDoc.Document
+
+	Dim oEvents As Inventor.PropertySet
+	
+	Dim oRefDocs as List(Of Document) = oDoc.AllReferencedDocuments
+	
+	For Each doc as Document In oRefDocs
+	
+		Try
+			oEvents = doc.PropertySets.Item("{2C540830-0723-455E-A8E2-891722EB4C3E}")
+		Catch
+			oEvents = doc.PropertySets.Add("iLogicEventsRules", "{2C540830-0723-455E-A8E2-891722EB4C3E}")
+		End Try
+
+		For Each oItem As [Property] In oEvents
+			oItem.Delete
+		Next
+		
+	Next 
+
+End Sub

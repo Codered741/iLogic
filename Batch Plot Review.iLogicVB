@@ -1,0 +1,570 @@
+Imports System.IO
+Imports System.IO.File
+'Imports System.IO.Path
+'Imports System.Collections
+'Imports My.Computer.FileSystem
+
+
+'Type queueType = Type.GetTypeFromProgID("PDFCreator.JobQueue")
+'Activator.CreateInstance(queueType)
+
+'AddReference "C:\Program Files\PDFCreator\PDFCreator.ComWrapper.dll"
+'Imports pdfforge.PDFCreator.UI.ComWrapper
+
+Sub Main()
+
+	Dim usrTimeAck = MessageBox.Show("This rule will find all drawings of parts referenced in the BOM, print them to PDF's and merge them to a single document.  "  _
+		& vbLf & "This process can take some time to run, and cannot be stopped once started.  " _ 
+		& vbLf & "Please ensure you have PDFCreator installed before continuing.  ", "Time Warning", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning)
+		
+	If usrTimeAck = vbCancel Then
+		Exit Sub
+	End If
+	
+	Dim reviewPrint = MessageBox.Show("Would you like to print the drawings with notes for review?", "Review Print", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+	
+	
+	Dim VaultAddin As Inventor.ApplicationAddIn = ThisApplication.ApplicationAddIns.ItemById("{48B682BC-42E6-4953-84C5-3D253B52E77B}")
+	VaultAddin.Deactivate()
+	
+	'create access to Batch Plot log
+	Dim oAppend As System.IO.StreamWriter
+	Dim oFile As String = "Z:\Inventor Data\BPLog.log"
+	Dim noWrite as Boolean = False
+	
+	'try getting access to log, disable CSV output if access cannot be gained.  
+	Try
+		oAppend = IO.File.AppendText(oFile)
+	Catch
+		noWrite = True
+		' MsgBox("Cannot write to log.  Click OK to continue.  ")
+	End Try
+
+	Try 
+		Dim oDoc as Document = ThisApplication.ActiveDocument
+		Dim FileNameMinLong as Integer = 21 'C:/_vaultWIP/Designs/ is 21 characters.  
+		
+		'check if active document is an assembly
+		If isAsm(oDoc) = False
+			MsgBox("Please run from an Assembly")
+			Return
+		End If
+		
+		'write to iLogic Log
+		SharedVariable("LogVar") = "Batch Plot Review" 
+		iLogicVB.RunExternalRule("Write SV to Log.iLogicVB")
+		
+		'Start Stream output, user name and date stamp
+		If Not noWrite = True Then
+			oAppend.WriteLine("/////////////////////BATCH EXPORT PDF - REVIEW/////////////////////")
+			oAppend.WriteLine(ThisApplication.UserName & "," & DateTime.Now.ToString("G") & "," & oDoc.FullFileName)
+		End If
+		
+		Dim lstDrawings as New List(of String)
+		
+		Dim BOMDocs As New List(of String)
+
+		'get list of part numbers from Structured BOM
+		GetDocsFromBOM(oDoc, BOMDocs)
+		
+		
+		 Dim oProgressBar as Inventor.ProgressBar
+		' Dim DocCount = oRefDocs.Count
+		 oProgressBar = ThisApplication.CreateProgressBar(False, BOMDocs.Count, "Finding Drawings...")
+
+		'Attempt to find a drawing file of the same name as the assembly doc
+		RefDwgFullFileName = FindDrawingFilePN(oDoc)
+		
+		oProgressBar.Message = "Checking for drawing of " & oDoc.FullFileName
+		oProgressBar.UpdateProgress
+		
+		If RefDwgFullFileName.Length > FileNameMinLong Then 
+		
+			lstDrawings.Add(RefDwgFullFileName)
+			
+		End If
+		
+		
+		'Dim bDoc as Document
+		For Each BOMDoc as String In BOMDocs
+			bDoc = ThisApplication.Documents.ItemByName(BOMDoc) 'convert full file name to document object
+			
+			oProgressBar.Message = "Checking for drawing of " & BOMDoc 'oRefDoc.FullFileName
+			oProgressBar.UpdateProgress
+
+			'Attempt to find a drawing file of the same name as the model doc
+			RefDwgFullFileName = FindDrawingFilePN(bDoc)
+			oAppend.Write(BOMDoc & ",")
+			If RefDwgFullFileName.Length > FileNameMinLong Then 
+			
+				lstDrawings.Add(RefDwgFullFileName)
+				oAppend.WriteLine(RefDwgFullFileName)
+				
+			Else 
+				
+				oAppend.WriteLine("NO DRAWING FOUND")
+				
+			End If
+			
+		Next
+		
+		oProgressBar.Close		
+		
+		If lstDrawings.Count > 0 Then
+			MergePrintDwgs(oDoc.FullFileName, lstDrawings, reviewPrint)
+			CopyPostInfo(oDoc)
+			
+		Else
+			MsgBox("No drawings found.  Please download the part drawings from Vault, or create them.  Contact a Vault Admin for assistance if needed.  ")
+		End If
+		
+		
+		
+	Catch Ex as Exception
+	
+		MsgBox("Main error: " & Ex.Message)
+		
+	Finally 
+	
+		VaultAddin.Activate
+		oAppend.Flush
+		oAppend.Close
+		
+	End Try
+	
+End Sub 'Main
+
+
+Sub CopyPostInfo(doc as Document)
+	Dim FinalText as String 
+	Dim desPropSet as PropertySet = Doc.PropertySets.Item("Design Tracking Properties")
+	FinalText = "Job Number: " & DesPropSet.Item("Part Number").Value & vbLf & _
+					"Kit Name: " & DesPropSet.Item("Description").Value & vbLf & _
+					"Project Name: " & DesPropSet.Item("Project").Value
+	My.Computer.Clipboard.SetText(FinalText)
+End Sub 'CopyPostInfo
+
+Private Sub MergePrintDwgs(strFilePath As String, lstDwgsPrint As List(Of String), reviewPrint as Object)
+
+	Dim oPath As String = ThisDoc.Path
+	Dim oFileName As String = ThisDoc.FileName(False)
+	Dim oRevNum As String = iProperties.Value("Project", "Revision Number")
+	Dim oDesc As String = iProperties.Value("Project", "Description")
+	Dim oPrj As String = iProperties.Value("Project", "Project")
+
+	Dim fullPath As String = oPath & "\" & oFileName & " - " & oPrj & " - " & oDesc & " -REV" & oRevNum & " " & Now.ToString("yyyyMMdd")
+	If Len(fullPath) > 254 Then
+		MessageBox.Show("Path too long. Using C:\_vaultWIP\Designs\", "Path Warning")
+		fullPath = "C:\_vaultWIP\Designs\" & oFileName & " - " & oPrj & " - " & oDesc & " -REV" & oRevNum & " " & Now.ToString("yyyyMMdd")
+	End If
+	fullPath = fullPath.Replace("/", "")
+
+	Dim tempFolder As String = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "InvPDF_" & Now.ToString("yyyyMMdd_HHmmss"))
+	System.IO.Directory.CreateDirectory(tempFolder)
+
+	Dim tempPDFs As New List(Of String)
+	Dim oProgressBar As Inventor.ProgressBar = ThisApplication.CreateProgressBar(False, lstDwgsPrint.Count, "Exporting to PDF...")
+
+	Try
+		Dim pdfAddIn As Inventor.TranslatorAddIn
+		Try
+			pdfAddIn = ThisApplication.ApplicationAddIns.ItemById("{0AC6FD96-2F4D-42CE-8BE0-8AEA580399E4}")
+			If Not pdfAddIn.Activated Then pdfAddIn.Activate()
+		Catch
+			MsgBox("PDF Add-In not found. Check Tools > Add-Ins and ensure 'Translator: PDF' is loaded (it should be built-in).")
+			Exit Sub
+		End Try
+
+		Dim oContext As Inventor.TranslationContext = ThisApplication.TransientObjects.CreateTranslationContext
+		oContext.Type = Inventor.IOMechanismEnum.kFileBrowseIOMechanism
+
+		Dim oOptions As Inventor.NameValueMap = ThisApplication.TransientObjects.CreateNameValueMap
+		oOptions.Value("All_Color_AS_Black") = 0  ' Full color
+		oOptions.Value("Remove_Line_Weights") = 0 ' Keep line weights
+		oOptions.Value("Vector_Resolution") = 600 ' Balanced quality/speed
+		oOptions.Value("Sheet_Range") = Inventor.PrintRangeEnum.kPrintAllSheets
+
+		Dim oData As Inventor.DataMedium
+
+		For i As Integer = 0 To lstDwgsPrint.Count - 1
+			Dim dwgPath As String = lstDwgsPrint(i)
+			oProgressBar.Message = "Exporting: " & System.IO.Path.GetFileName(dwgPath)
+			oProgressBar.UpdateProgress
+
+			Dim oDoc As DrawingDocument = Nothing
+			Try
+				'--- Open with DeferUpdates = True, Visible = False ---
+				Dim openOpts As Inventor.NameValueMap = ThisApplication.TransientObjects.CreateNameValueMap
+				openOpts.Value("DeferUpdates") = True
+				openOpts.Value("FastOpen") = True
+				openOpts.Value("SkipAllUnresolvedFiles") = True
+
+				oDoc = ThisApplication.Documents.OpenWithOptions(dwgPath, openOpts, False) ' Invisible
+
+				'--- Ensure document is fully loaded ---
+				ThisApplication.UserInterfaceManager.DoEvents()
+				System.Threading.Thread.Sleep(100) ' Let it settle
+				
+				If reviewPrint = vbYes Then
+					CreateReviewNotes(oDoc, GetReviewNotes(oDoc), 11.5, 3.125)
+				End If
+				
+				oData = ThisApplication.TransientObjects.CreateDataMedium
+				Dim tempPDF As String = tempFolder & "\dwg_" & i & ".pdf"
+				oData.FileName = tempPDF
+
+				'--- Export ---
+				Try
+					pdfAddIn.SaveCopyAs(oDoc, oContext, oOptions, oData)
+					tempPDFs.Add(tempPDF)
+				Catch ex As Exception
+					MessageBox.Show("Failed to export: " & dwgPath & vbCrLf & ex.Message, "Export Failed")
+					' Continue with next
+				End Try
+
+			Catch ex As Exception
+				MessageBox.Show("Failed to open: " & dwgPath & vbCrLf & ex.Message, "Open Failed")
+			Finally
+				If Not oDoc Is Nothing Then
+					Try : oDoc.Close(True) : Catch : End Try
+				End If
+			End Try
+		Next
+
+		'--- Merge with qpdf ---
+		Dim qpdfExe As String = "C:\_vaultWIP\Designs\Templates\Library\iLogic\DLL\qpdf.exe"  			
+		If Not System.IO.File.Exists(qpdfExe) Then
+			MsgBox("qpdf.exe not found at:" & vbCrLf & qpdfExe & vbCrLf & vbCrLf & "Download from: https://github.com/qpdf/qpdf/releases", "Missing qpdf")
+			Exit Sub
+		End If
+
+		If tempPDFs.Count = 0 Then
+			MsgBox("No PDFs to merge.")
+			Exit Sub
+		End If
+
+		Dim args As String = "--empty --pages"
+		For Each p In tempPDFs
+			args &= " """ & p & """"
+		Next
+		args &= " -- """ & fullPath & ".pdf"""
+
+		Dim psi As New System.Diagnostics.ProcessStartInfo
+		psi.FileName = qpdfExe
+		psi.Arguments = args
+		psi.UseShellExecute = False
+		psi.CreateNoWindow = True
+		psi.RedirectStandardError = True
+		psi.RedirectStandardOutput = True
+
+		Dim proc As System.Diagnostics.Process
+		Try
+			proc = System.Diagnostics.Process.Start(psi)
+			proc.WaitForExit()
+		Catch ex As Exception
+			MsgBox("Failed to start qpdf.exe:" & vbCrLf & ex.Message & vbCrLf & vbCrLf & "Install Visual C++ Redistributable (x64):" & vbCrLf & "https://aka.ms/vs/17/release/vc_redist.x64.exe", 0, "qpdf Launch Error")
+			Exit Sub
+		End Try
+
+		If proc.ExitCode = 0 Then
+			'MsgBox("PDF Created:" & vbCrLf & fullPath & ".pdf", 0, "Success")
+		Else
+			Dim err As String = proc.StandardError.ReadToEnd()
+			MsgBox("qpdf failed (Code: " & proc.ExitCode & ")" & vbCrLf & vbCrLf & _
+				   "Error: " & err & vbCrLf & vbCrLf & _
+				   "Fix: Install Visual C++ Redistributable (x64)", 0 ,  "Merge Failed")
+		End If
+
+	Catch ex As Exception
+		MsgBox("Unexpected error: " & ex.Message)
+	Finally
+		For Each f In tempPDFs
+			Try : System.IO.File.Delete(f) : Catch : End Try
+		Next
+		Try : System.IO.Directory.Delete(tempFolder, True) : Catch : End Try
+		oProgressBar.Close
+	End Try
+
+	Process.Start("explorer.exe", "/select,""" & fullPath & ".pdf""")
+End Sub
+
+Sub GetDocsFromBOM(oDoc as Document, ByRef BOMDocs as List(of String))
+	
+	If oDoc.DocumentType <> kAssemblyDocumentObject Then
+		MsgBox("This rule can only be run from an assembly")
+		Exit Sub
+	End If
+	
+	Dim oDocBOM As BOM = oDoc.ComponentDefinition.BOM
+
+	oDocBOM.StructuredViewEnabled = True
+	oDocBOM.StructuredViewFirstLevelOnly = False
+	oDocBOM.PartsOnlyViewEnabled = False
+
+	Dim oBOMView as BOMView = oDocBOM.BOMViews.Item("Structured")	
+	Dim oBOMRows As BOMRowsEnumerator = oBOMView.BOMRows
+	Dim oCompDef As ComponentDefinition
+	Dim oPNProp as Inventor.Property
+		
+	For Each oRow as BOMRow in oBOMRows
+		
+			GetBOMRowDocFile(oRow, BOMDocs)
+		
+	Next 
+	
+	'BOMDocs.Sort()
+	
+End Sub
+
+Sub GetBOMRowDocFile(oRow as BOMRow, ByRef BOMDocs as List(of String))
+	
+	Dim oCompDef As ComponentDefinition
+	
+	'Add the part number of the current row, for parts that have children
+	oCompDef = oRow.ComponentDefinitions.Item(1)
+	
+	If oCompDef.Type = 100675072 Then 'exclude Virtual Components
+		'do nothing
+	Else
+
+		DocName = oCompDef.Document.FullFileName
+
+		If Not BOMDocs.Contains(DocName) Then
+			BOMDocs.Add(DocName)
+		End If
+		
+	End If
+		
+	If Not oRow.ChildRows Is Nothing Then
+	
+		If Not BOMDocs.Contains(DocName) Then
+			BOMDocs.Add(DocName)
+		End If
+	
+		For Each oChildRow as BOMRow in oRow.ChildRows		
+			GetBOMRowDocFile(oChildRow, BOMDocs)
+		Next
+		
+	End If
+	
+End Sub
+
+Function FindDrawingFilePN(PartOrAssemblyDoc As Document) As String
+    Dim fullFilenamePN As String
+    fullFilenamePN = PartOrAssemblyDoc.fullFilename
+   
+    ' Extract the path from the full filename.
+    Dim path As String = ThisApplication.DesignProjectManager.ActiveDesignProject.WorkspacePath
+    'path = Left$(fullFilenamePN, InStrRev(fullFilenamePN, "\"))
+
+	Dim iProps as PropertySet = PartOrAssemblyDoc.PropertySets.Item("Design Tracking Properties")
+	Dim pn = iProps.Item("Part Number")
+	
+    Dim filename As String = pn.Value
+
+    ' Find if the drawing exists.
+    Dim drawingFilename As String
+    drawingFilename = ThisApplication.DesignProjectManager.ResolveFile(path, filename & ".dwg")
+   
+    ' Check the result.
+    If drawingFilename = "" Then
+       
+        ' Find if the drawing exists.
+        drawingFilename = ThisApplication.DesignProjectManager.ResolveFile(path, filename & ".idw")
+   
+        ' Return the result.
+        If drawingFilename <> "" Then
+            Return drawingFilename
+        Else
+            Return ""
+        End If
+    Else
+        ' Return the result.
+         Return drawingFilename
+    End If
+End Function 'FindDrawingFilePNN
+
+Private Sub DwgPrint(PrinterName as String)
+	Dim oPrintMgr As DrawingPrintManager = ThisApplication.ActiveDocument.PrintManager
+	' Get the name of the printer that will be used.
+	oPrintMgr.Printer = PrinterName
+	
+	' Set to print in color.
+	oPrintMgr.ColorMode = 13313 'kPrintColorPalette
+	
+	' Set to print one copies.
+	oPrintMgr.NumberOfCopies = 1
+	
+	' Set to print using landscape orientation.
+	oPrintMgr.Orientation = 13570
+		'13570 'kLandscapeOrientation
+		'13569 'kPortraitOrientation
+	
+	' Set the paper size.
+	oPrintMgr.PaperSize = 14338
+		'14338 'kPaperSize11x17
+		
+	'oPrintMgr.PaperWidth = 431.8
+	'oPrintMgr.PaperHeight = 27.94
+	
+	' Set to print all sheets.
+	oPrintMgr.PrintRange = 14082 'kPrintAllSheets
+	
+	' Set to print full scale.
+	oPrintMgr.ScaleMode = 13825 'kPrintFullScale
+	
+	' Submit the print.
+	oPrintMgr.SubmitPrint
+End Sub 'DwgPrint
+
+Private Sub printTestFile()
+	Dim ShellObj As Object
+
+	ShellObj = CreateObject("Shell.Application")
+	ShellObj.ShellExecute("RUNDLL32.exe", "PRINTUI.DLL,PrintUIEntry /k /n ""PDFCreator""", "", "open", 1)
+End Sub
+
+Function DocumentFileName(Doc As String) As String
+	DocumentFileName = Left(Doc, Doc.Length - 4)
+	'MsgBox(DocumentFileName)
+End Function 'DocumentFileName
+
+Function isAsm(ThisDoc As Document) As Boolean
+	Debug.Print (ThisDoc.DocumentType)
+	If ThisDoc.DocumentType = kAssemblyDocumentObject Then
+		isAsm = True
+	Else
+		isAsm = False
+	End If
+End Function 'isAsm
+
+Private Sub CreateReviewNotes(oDwgDoc As DrawingDocument, NoteText As String, Xcoord As Double, Ycoord As Double)  'Creates text box with gray background and red text, on the first page of a drawing.  
+	
+	'Activate the first sheet in the drawing.  
+	Dim oSheet As Sheet = oDwgDoc.Sheets.Item(1)
+	oSheet.Activate
+	
+	'Get the drawings general notes object
+	Dim oGeneralNotes as GeneralNotes = oSheet.DrawingNotes.GeneralNotes
+	
+	'Get the applications transient geometry collection
+	Dim oTG As TransientGeometry = ThisApplication.TransientGeometry
+	
+	'Create note at point with text
+	Dim oGeneralNote As GeneralNote = oGeneralNotes.AddFitted(oTG.CreatePoint2d(Xcoord, Ycoord), NoteText)
+	
+	'align the text bottom left in the text box
+	oGeneralNote.HorizontalJustification = 19970'kAlignTextLeft
+    oGeneralNote.VerticalJustification = 25603 'kAlignTextLower
+    
+	
+	'Set the background color to gray
+    'Dim bgColor As Inventor.Color = ThisApplication.TransientObjects.CreateColor(220, 220, 220) 'gray
+    'oGeneralNote.BackgroundColor = bgColor
+    'oGeneralNote.UseBackgroundColor = True
+    
+	'set the text color to red
+    Dim tColor As Inventor.Color = ThisApplication.TransientObjects.CreateColor(255, 0, 0) 'red
+    oGeneralNote.Color = tColor
+	
+End Sub 'EnterReviewNotes
+
+
+Function GetReviewNotes(DwgDoc as DrawingDocument) As String
+	
+	Try
+		'Get properties
+		Dim customPropertySet As PropertySet = DwgDoc.PropertySets.Item("Inventor User Defined Properties")
+		Dim pOPS = customPropertySet.Item("OPS")
+		'Dim pMB = customPropertySet.Item("MakeBuy")
+		'Dim pSP = customPropertySet.Item("SP")
+		Dim pWidth = customPropertySet.Item("WIDTH")
+		Dim pLength = customPropertySet.Item("LENGTH")
+		'Dim pThick = customPropertySet.Item("THICKNESS")
+		Dim pMatNum = customPropertySet.Item("MATERIAL NUMBER")
+		Dim pMatDesc = customPropertySet.Item("MATERIAL DESCRIPTION")
+		Dim pNotes = customPropertySet.Item("NOTES")
+		
+		'Dim cmdMgr as CommandManager = ThisApplication.CommandManager
+		'oCommandMgr.ControlDefinitions.Item("UpdateCopiedModeliPropertiesCmd").Execute2(True)
+		
+		Dim L1 as String = "Dims (LxW): " & pLength.Value  & " x " & pWidth.Value & vbLf
+		Dim L2 as String = "Mtl Num: " & pMatNum.Value & vbLf
+		Dim L3 as String = "Mtl Desc: " & pMatDesc.Value & vbLf
+		Dim L4 as String = "OPS: " & pOPS.Value & vbLf
+		Dim L5 as String = "Notes: " & pNotes.Value
+		
+		Return "REVIEW NOTES: " & VBlf & L1 & L2 & L3 & L4 & L5
+	Catch 
+		Return "ERROR" & vblf & "Check the property sync for this file!"
+	End Try
+End Function 'GetReviewNotes
+
+
+'Example from API
+' Public Sub SheetTextAdd()
+    ' ' Set a reference to the drawing document.
+    ' ' This assumes a drawing document is active.
+    ' Dim oDrawDoc As DrawingDocument
+    ' Set oDrawDoc = ThisApplication.ActiveDocument
+
+    ' ' Set a reference to the active sheet.
+    ' Dim oActiveSheet As Sheet
+    ' Set oActiveSheet = oDrawDoc.ActiveSheet
+    
+    ' ' Set a reference to the GeneralNotes object
+    ' Dim oGeneralNotes As GeneralNotes
+    ' Set oGeneralNotes = oActiveSheet.DrawingNotes.GeneralNotes
+    
+    ' Dim oTG As TransientGeometry
+    ' Set oTG = ThisApplication.TransientGeometry
+
+    ' ' Create text with simple string as input. Since this doesn't use
+    ' ' any text overrides, it will default to the active text style.
+    ' Dim sText As String
+    ' sText = "Drawing Notes"
+    
+    ' Dim oGeneralNote As GeneralNote
+    ' Set oGeneralNote = oGeneralNotes.AddFitted(oTG.CreatePoint2d(3, 18), sText)
+
+    ' ' Create text using various overrides.
+    ' sText = "Notice: All holes larger than 0.500 n are to be lubricated."
+    ' Set oGeneralNote = oGeneralNotes.AddFitted(oTG.CreatePoint2d(3, 16), sText)
+
+    ' ' Create a set of notes that are numbered and aligned along the left.
+    ' Dim dYCoord As Double
+    ' dYCoord = 14
+    ' Dim dYOffset As Double
+    ' Dim oStyle As TextStyle
+    ' Set oStyle = oGeneralNotes.Item(1).TextStyle
+    ' dYOffset = oStyle.FontSize * 1.5
+
+    ' ' Simple single line text.
+    ' Set oGeneralNote = oGeneralNotes.AddFitted(oTG.CreatePoint2d(3, dYCoord), "1.")
+    ' sText = "This is note 1."
+    ' Set oGeneralNote = oGeneralNotes.AddFitted(oTG.CreatePoint2d(4, dYCoord), sText)
+
+    ' ' Two line text. The two lines are defined using the  tag within the text string.
+    ' dYCoord = dYCoord - (oGeneralNote.FittedTextHeight + 0.5)
+    ' Set oGeneralNote = oGeneralNotes.AddFitted(oTG.CreatePoint2d(3, dYCoord), "2.")
+    ' sText = "This is note 2,  which contains two lines."
+    ' Set oGeneralNote = oGeneralNotes.AddFitted(oTG.CreatePoint2d(4, dYCoord), sText)
+
+    ' ' Single line of text.
+    ' dYCoord = dYCoord - (oGeneralNote.FittedTextHeight + 0.5)
+    ' Set oGeneralNote = oGeneralNotes.AddFitted(oTG.CreatePoint2d(3, dYCoord), "3.")
+    ' sText = "This is note 3."
+    ' Set oGeneralNote = oGeneralNotes.AddFitted(oTG.CreatePoint2d(4, dYCoord), sText)
+
+    ' ' Three lines of text.
+    ' dYCoord = dYCoord - (oGeneralNote.FittedTextHeight + 0.5)
+    ' Set oGeneralNote = oGeneralNotes.AddFitted(oTG.CreatePoint2d(3, dYCoord), "4.")
+    ' sText = "This is note 4,  which contains  several lines."
+    ' Set oGeneralNote = oGeneralNotes.AddFitted(oTG.CreatePoint2d(4, dYCoord), sText)
+
+    ' dYCoord = dYCoord - (oGeneralNote.FittedTextHeight + 0.5)
+    ' Set oGeneralNote = oGeneralNotes.AddFitted(oTG.CreatePoint2d(3, dYCoord), "5.")
+    
+    ' sText = "Here is the last and final line of text."
+    ' Set oGeneralNote = oGeneralNotes.AddFitted(oTG.CreatePoint2d(4, dYCoord), sText)
+' End Sub

@@ -1,0 +1,39 @@
+﻿AddReference "System.DirectoryServices.AccountManagement.dll"
+Sub Main()
+
+'Get Display Name from Windows Account
+Dim username As String = ThisApplication.GeneralOptions.UserName
+
+'Build one to many name/value pairs of Property/Value as search criteria;
+Dim mSearchParams As New System.Collections.Generic.Dictionary(Of String, String) 'add UDP.DisplayName, Value Pairs
+mSearchParams.Add("Checked Out By", username)		'applies to files from 001000 to 001009
+'...add as many as required to enable a unique search result
+
+'the list of downloaded files
+Dim mVaultFiles As List(Of String)
+'returns full file names in local working folder (download enforces override, if local file exists)
+'returns null (nothing) if no files return		
+mVaultFiles = iLogicVault.GetFilesBySearchCriteria(mSearchParams, False, False)  'the default for optional parameter MatchAllCriteria = false, CheckOut = true, searching all folders
+'prepare output
+Dim mFileList As String
+If mVaultFiles.Count = 0 Then
+	Logger.Error("The file searched was not found. Please double check that files can be found with search criteria applied.")
+Else	
+	For Each mFile As String In mVaultFiles
+		mFileList += mFile & vbCr
+	Next
+	Logger.Info("iLogic-Vault file search found: " & mFileList)
+	'so the files are there, do whatever you need to do consuming these...
+
+End If
+
+Openall = MessageBox.Show(mFileList & vbCrLf & vbCrLf & "Would you like to open all the above files?", "List Of Files Checked Out By" & username, MessageBoxButtons.YesNo)
+
+If Openall = vbNo Then GoTo gotoend
+
+	For Each mFile2 As String In mVaultFiles
+	ThisApplication.Documents.Open(mFile2)
+	Next
+
+Gotoend:
+End Sub

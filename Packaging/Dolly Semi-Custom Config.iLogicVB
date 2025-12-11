@@ -1,0 +1,146 @@
+'change Cart size - makes initial changes to Dolly Semi-Custom Template.iam, or Copy Designs of it.  
+
+
+'Logic: 
+'prompt user for length
+'prompt user for width
+'generate member names 
+'change members of each entry
+	' Shell
+	' Wall
+	' Base Wood
+	' Top + Half Shelves
+	' Full Shelves
+	' Hangars
+	' Boxes
+	
+sub Main()
+	Dim pLong as String
+	Dim pWide as String
+	Dim stdSel as New List(of String)
+	Dim std as String
+	
+	stdSel.Add("US")
+	stdSel.Add("UK")
+	
+	std = InputListBox("Please select the Standard you would like to use: ", stdSel, stdSel(0), Title:= "Select Units", ListName := "Units")
+	
+	If std = "US" Then
+		std = ""
+		parameter("EndFrameOffset") = "1 in"
+	Else 
+		std = "UK "
+		parameter("EndFrameOffset") = "25 mm"
+	End If
+		
+		
+	'create list entries for Cart Widths
+	Dim wideList as New List (of String)
+	wideList.Add(30)
+	wideList.Add(45)
+	wideList.Add(60)
+	wideList.Add(89.5)
+	
+	'Prompt User for desired Width
+	pWide = InputListBox("Please select the desired cart width (inch): ", wideList, wideList(0), Title:= "Select Dolly Width", ListName := "Available Widths")
+	
+	'Create Length options (with available variants)
+	Dim longList as New List (of String)
+	
+	If pWide < 60 Then	
+		longList.Add(54)
+	End If
+	
+	If pWide < 89.5 Then		
+		longList.Add(60)
+		longList.Add(66)
+		longList.Add(72)
+		longList.Add(78)
+		longList.Add(84)
+	End If
+	
+	longList.Add(90)
+	longList.Add(96)
+	longList.Add(102.5)
+	longList.Add(108)
+	longList.Add(114)
+	longList.Add(120)
+	longList.Add(125)
+	
+	If pWide < 60 Then
+		longList.Add(132)
+		longList.Add(138)
+		longList.Add(144)
+		longList.Add(150)
+	End If
+	
+	'Prompt User for desired Length
+	pLong = InputListBox("Please select the desired cart length: ", longList, "45", Title:= "Select Dolly Length", ListName := "Available Lengths")
+
+	iPart.ChangeRow("Base", std & "Dolly Base " & pWide & " inch x " & pLong & " inch - 3x8")
+	iPart.ChangeRow("Front End Frame", std & "Dolly End Frame Config - " & pWide)
+	iPart.ChangeRow("Back End Frame", std & "Dolly End Frame Config - " & pWide)
+	iPart.ChangeRow("Center Wall", std & "Dolly Center Wall CS-SOS 62 in tall - " & pLong & " in")	
+	iPart.ChangeRow("Top Right Shelf", std & "Dolly Frame Top+Half Shelf Center Split - " & pWide & " in x " & pLong & " in")
+	iPart.ChangeRow("Top Left Shelf", std & "Dolly Frame Top+Half Shelf Center Split - " & pWide & " in x " & pLong & " in")
+	iPart.ChangeRow("Left Half Shelf", std & "Dolly Frame Top+Half Shelf Center Split - " & pWide & " in x " & pLong & " in")
+	iPart.ChangeRow("Left Full Shelf", std & "Dolly Frame Full Shelf Center Split - " & pWide & " in x " & pLong & " in") 'Dolly Frame Full Shelf Center Split - 45 in x 96 in
+	
+	'Dolly wood is not different from US to UK
+	iPart.ChangeRow("Base Wood", "Dolly Wood " & pWide & " inch x " & pLong & " inch Center Split") 'Dolly Wood 45 inch x 96 inch Center Split
+	
+	If pWide < 60 Then
+		iPart.ChangeRow("Front Hangar A", std & "Dolly Tube Hanger A " & pWide & " inch")
+		iPart.ChangeRow("Back Hangar A", std & "Dolly Tube Hanger A " & pWide & " inch")
+		iPart.ChangeRow("Front Hangar B", std & "Dolly Tube Hanger B " & pWide & " inch")
+		iPart.ChangeRow("Back Hangar B", std & "Dolly Tube Hanger B " & pWide & " inch")
+	Else 
+		MessageBox.Show("Hangars for Dollies greater than 45 in do not exist.  Remaining parts will be changed.  " )
+	End If
+	
+	If pWide <= 60 Then	
+		iPart.ChangeRow("Top Box", "Dolly Top Box - " & pWide & " in x " & pLong & " in")  
+		iPart.ChangeRow("Middle Box", "Dolly Middle Box - " & pWide & " in x " & pLong & " in")
+		iPart.ChangeRow("Bottom Box 1", "Dolly Bottom Box - " & pWide & " in x " & pLong & " in")
+		iPart.ChangeRow("Bottom Box 2", "Dolly Bottom Box - " & pWide & " in x " & pLong & " in")
+	Else 
+		MessageBox.Show("Boxes for Dollies greater than 60 in do not exist.  Remaining parts will be changed.  " )
+	End If
+		
+
+End Sub 'Main
+
+Public Shared Sub ListGenLong(wide as String)
+	
+	Dim longList as New List (of String)
+	
+	If wide < 60 Then	
+		longList.Add(54)
+	End If
+	
+	If (wide >= 60 And wide < 89.5) Then		
+		longList.Add(60)
+		longList.Add(66)
+		longList.Add(72)
+		longList.Add(78)
+		longList.Add(84)
+	End If
+	
+	longList.Add(90)
+	longList.Add(96)
+	longList.Add(102.5)
+	longList.Add(108)
+	longList.Add(114)
+	longList.Add(120)
+	longList.Add(125)
+	
+	If wide < 60 Then
+		longList.Add(132)
+		longList.Add(138)
+		longList.Add(144)
+		longList.Add(150)
+	End If
+	
+
+	
+End Sub 'ListGenLong

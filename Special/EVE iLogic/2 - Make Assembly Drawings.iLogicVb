@@ -1,0 +1,18 @@
+﻿'Dim addIn As ApplicationAddIn
+Dim addIns As ApplicationAddIns = ThisApplication.ApplicationAddIns
+Dim iLogicAuto
+For Each addIn In addIns
+    If InStr(addIn.DisplayName, "iLogic") > 0 Then
+        iLogicAuto = addIn.Automation
+        Exit For
+    End If
+Next
+
+For Each oDoc As Document In ThisApplication.Documents.VisibleDocuments
+oDoc.Activate()
+
+iLogicAuto.RunExternalRule(oDoc, "Drawing - Assembly")
+'iLogicAuto.RunExternalRule(oDoc, "Copy Blocks")
+'iLogicAuto.RunExternalRule(oDoc, "Add Custom iProps")
+
+Next

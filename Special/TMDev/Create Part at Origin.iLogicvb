@@ -1,0 +1,126 @@
+﻿'Original Script from: https://forums.autodesk.com/t5/inventor-programming-ilogic/how-to-copy-a-part-in-an-assembly-using-ilogic-or-api/td-p/10572777
+
+Sub Main
+If ThisApplication.ActiveDocumentType <> DocumentTypeEnum.kAssemblyDocumentObject Then
+	MsgBox("An Assembly Document must be active for this rule to work. Exiting.",vbCritical, "WRONG DOCUMENT TYPE")
+	Exit Sub
+End If
+Dim oADoc As AssemblyDocument = ThisApplication.ActiveDocument
+Dim oADef As AssemblyComponentDefinition = oADoc.ComponentDefinition
+'get its full file name (path, name, & extension)
+Dim oOrigFile As String = "C:\_vaultWIP\Designs\Templates\Disney\160398 PORTER ipt Z-UP SELF-NAMING.ipt"
+
+
+
+'----------------GET VAULT NUMBER-----------------------
+'Set the name of the numbering scheme or use 'Default' to use the pre-set scheme
+Dim mNumSchmName As String = "Default"
+'Optionally collect input values for file the selected numbering scheme; use the order of the fields as configured in the scheme;
+Dim mNumInput As New System.Collections.Generic.List(Of String) 'add UDP.DisplayName, Value Pairs
+
+'Create single file number by scheme name and optional input parameters; returns new number or error message "GetNumberFailed"
+Dim mFileNumber As String = iLogicVault.GetNewNumber(mNumSchmName) 'optionally add the mNumInput variable adding ...", mNumInput)
+
+
+'-------------------------COPY THE FILE---------------------------
+
+''<<< now specify the new path & file name for the new file (after copied) >>>
+
+Dim oPath As String = System.IO.Path.GetDirectoryName(oADoc.FullFileName)   ''capture 'path' of assembly
+Dim oExt As String = ".ipt"
+
+Dim oDirSep As Char = System.IO.Path.DirectorySeparatorChar    ''get 'local' directory seperator character (just in case it's different on your computer)
+
+Dim oCopiedFile As String = oPath & oDirSep & mFileNumber & oExt    ''now assemble the new path, name, & extension
+
+ThisApplication.FileManager.CopyFile(oOrigFile, oCopiedFile, FileManagementEnum.kCopyFileMask)    ''now copy it
+
+
+
+'--------------------OPEN FILE, SAVE IT, SET AS NOT READ ONLY--------------------
+Dim OepnDoc As Document = ThisApplication.Documents.Open(oCopiedFile)
+Dim newDoc As Document = ThisApplication.Documents.ItemByName(oCopiedFile)
+newDoc.Save()
+
+Dim fi As New IO.FileInfo(oCopiedFile)
+If (fi.Attributes And IO.FileAttributes.ReadOnly) = IO.FileAttributes.ReadOnly Then
+  fi.Attributes = fi.Attributes Xor IO.FileAttributes.ReadOnly 'toggle off
+End If
+
+'--------------------EDIT PART NUMNBER AND DESCRIPTION OF NEW FILE--------------------
+'Set Part Number
+newDoc.PropertySets.Item("Design Tracking Properties").Item("Part Number").Value = mFileNumber
+
+'Set Description
+Dim newDesc As String = newDoc.PropertySets.Item("Design Tracking Properties").Item("Description").Value
+newDesc = InputBox("", "Enter Description for New File", newDesc)
+newDoc.PropertySets.Item("Design Tracking Properties").Item("Description").Value = newDesc
+
+newDoc.Save()
+
+
+'-------------------EDIT BOM STRUCTURE OF NEW FILE---------------------------
+
+oBOMStruct = newDoc.ComponentDefinition.BOMStructure
+Dim oStrucText As String
+Select Case oBOMStruct
+
+	Case 51970
+		oStrucText = "Normal"
+	Case 51974
+		oStrucText = "Inseparable"
+	Case 51973
+		oStrucText = "Purchased"
+	Case 51971
+		oStrucText = "Phantom"
+	Case 51972
+		oStrucText = "Reference"
+
+End Select
+
+
+'MessageBox.Show(oStrucText, "Title")
+
+
+Dim MyArrayList As New ArrayList
+MyArrayList.Add("Normal")
+MyArrayList.Add("Inseparable")
+MyArrayList.Add("Purchased")
+MyArrayList.Add("Phantom")
+MyArrayList.Add("Reference")
+Question = InputListBox("Choose new structure from list", MyArrayList, oStrucText,"Check/ Change BOM Structure", "Current: " & oStrucText & "                                                               ")
+
+'kDefaultBOMStructure 51969 The default structure type.
+'kInseparableBOMStructure 51974 The inseparable structure type.
+'kNormalBOMStructure 51970 The normal structure type.
+'kPhantomBOMStructure 51971 The phantom structure type.
+'kPurchasedBOMStructure 51973 The purchased structure type.
+'kReferenceBOMStructure 51972 The reference structure type.
+'kVariesBOMStructure 51975 The structure type varies amongst references.
+
+
+Select Case Question
+
+	Case "Normal"
+		newDoc.ComponentDefinition.BOMStructure = 51970
+	Case "Inseparable"
+		newDoc.ComponentDefinition.BOMStructure = 51974
+	Case "Purchased"
+		newDoc.ComponentDefinition.BOMStructure = 51973
+	Case "Phantom"
+		newDoc.ComponentDefinition.BOMStructure = 51971
+	Case "Reference"
+		newDoc.ComponentDefinition.BOMStructure = 51972
+End Select
+	
+
+
+'------------------CLOSE NEW FILE--------------------
+newDoc.Close()
+
+
+'--------------------------INSERT BACK INTO ASSEMBLY----------------------
+Dim oPosition As Matrix = ThisApplication.TransientGeometry.CreateMatrix
+oADef.Occurrences.Add(oCopiedFile, oPosition)
+
+End Sub

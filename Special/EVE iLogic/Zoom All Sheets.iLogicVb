@@ -1,0 +1,67 @@
+﻿Sub Main()
+'Make sure the active document is a Drawing
+If ThisApplication.ActiveDocument.DocumentType <> kDrawingDocumentObject Then
+	MessageBox.Show("The active document is not a drawing. The rule will now terminate.", "Sketch Symbol Auto-Numbering",MessageBoxButtons.OK,MessageBoxIcon.Error)
+	Exit Sub
+End If
+
+' Set a reference to the drawing document.
+' This assumes a drawing document is active.
+Dim oDrawDoc As DrawingDocument
+oDrawDoc = ThisApplication.ActiveDocument
+
+Dim oSheet As Sheet
+
+'Set a reference to the current Active sheet so we can re-activate it after the rule is done
+Dim myActiveSheet As Sheet
+myActiveSheet = oDrawDoc.ActiveSheet
+
+'Start a transaction
+Call ThisApplication.TransactionManager.StartTransaction(ThisDoc.Document, "Zoom Extents All Sheets")
+
+'Progress bar
+oMessage = "Zooming Extents on All Sheets..."
+Dim SheetCount As Integer
+SheetCount = oDrawDoc.Sheets.Count
+Dim oProgressBar As Inventor.ProgressBar
+oProgressBar = ThisApplication.CreateProgressBar(False,SheetCount,oMessage)
+
+'Create sheet counter variable
+Dim iSheetCount As Integer
+iSheetCount=0
+
+On Error GoTo ErrorTrapper
+
+'Iterate through each sheet and zoom to the sheet extents
+For Each oSheet In oDrawDoc.Sheets
+	'Get the current sheet number
+	iSheetCount=iSheetCount+1
+		
+	'Activate the current sheet
+	oSheet.Activate
+		
+	'Update the progress bar to reflect which sheet is being operated on
+	oProgressBar.Message = ("Processing Sheet " & iSheetCount & " of " & SheetCount & "...")
+	oProgressBar.UpdateProgress
+		
+	'Zoom to the sheet extents
+	ThisApplication.CommandManager.ControlDefinitions.Item("AppZoomallCmd").Execute	
+Next 'Sheet
+
+RuleExit:
+'Re-activate the originally active sheet
+myActiveSheet.Activate
+
+'Close the progress bar
+oProgressBar.Close
+
+'End the transaction
+ThisApplication.TransactionManager.EndTransaction
+']
+Exit Sub
+
+ErrorTrapper:
+MessageBox.Show("There was an error processing sheet " & iSheetCount & ". The rule will now terminate.", "Zoom Extents All Sheets",MessageBoxButtons.OK,MessageBoxIcon.Error)
+GoTo RuleExit
+
+End Sub

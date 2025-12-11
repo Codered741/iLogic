@@ -1,0 +1,14 @@
+﻿Dim oDoc1 As DrawingDocument
+oDoc1 = ThisApplication.ActiveDocument
+
+For Each oDoc In ThisApplication.Documents
+	If oDoc IsNot oDoc1 Then
+		'make sure it's a drawing
+		If oDoc.DocumentType = 12292 Then 
+			For Each oSheet In oDoc.Sheets
+				oSheet.CopyTo (oDoc1)
+			Next
+			oDoc.Close(True)
+		End If
+	End If
+Next

@@ -1,0 +1,98 @@
+﻿Dim oDoc As Document = ThisApplication.ActiveDocument
+
+Dim oDef As ComponentDefinition = oDoc.ComponentDefinition
+
+'Calculate bounding box size for model (units = cm)
+Dim X As Double = Math.Abs(oDef.RangeBox.MaxPoint.X - oDef.RangeBox.MinPoint.X)
+Dim Y As Double = Math.Abs(oDef.RangeBox.MaxPoint.Y - oDef.RangeBox.MinPoint.Y)
+Dim Z As Double = Math.Abs(oDef.RangeBox.MaxPoint.Z - oDef.RangeBox.MinPoint.Z)
+
+'Define IDW Template File Location
+Dim oDrawingDoc As DrawingDocument = ThisApplication.Documents.Add(kDrawingDocumentObject, "C:\_vaultWIP\Designs\Templates\Disney\DISNEY EVE DRAWING.dwg", True)
+
+'Set sheet to create views on (1) for first sheet (2) for second etc
+Dim oSheet As Sheet = oDrawingDoc.Sheets.Item(1)
+
+
+'Set View Scale
+ViewScale = .05
+
+'Create Sheet Metal base view options
+Dim oBaseViewOptions As NameValueMap = ThisApplication.TransientObjects.CreateNameValueMap
+'True = folded view  False = flat pattern view
+oBaseViewOptions.Add("SheetMetalFoldedModel", False) 
+
+'Define mid-points for views
+oPoint1 = ThisApplication.TransientGeometry.CreatePoint2d(22, 5) ' Front view
+oPoint2 = ThisApplication.TransientGeometry.CreatePoint2d(22, 13) ' Top view
+oPoint3 = ThisApplication.TransientGeometry.CreatePoint2d(10, 5) ' Left view
+oPoint4 = ThisApplication.TransientGeometry.CreatePoint2d(8, 22) ' Iso view
+
+
+'Create Views
+Dim oView1, oView2, oView3, oView4 As DrawingView
+
+
+oView1 = oSheet.DrawingViews.AddBaseView(oDoc, oPoint1, ViewScale, kFrontViewOrientation, kHiddenLineDrawingViewStyle)
+If oDoc.SubType = "{E60F81E1-49B3-11D0-93C3-7E0706000000}" Then
+oView1.SetDesignViewRepresentation("Default", True)
+End If
+oView1.Name = "FRONT VIEW"
+oView1.ShowLabel = True
+
+oView2 = oSheet.DrawingViews.AddProjectedView(oView1, oPoint2, kFromBaseDrawingViewStyle, ViewScale)
+oView2.Name = "TOP VIEW"
+oView2.ShowLabel = True
+
+oView3 = oSheet.DrawingViews.AddProjectedView(oView1, oPoint3, kFromBaseDrawingViewStyle, ViewScale)
+oView3.Name = "SIDE VIEW"
+oView3.ShowLabel = True
+
+oView4 = oSheet.DrawingViews.AddProjectedView(oView1, oPoint4, kHiddenLineRemovedDrawingViewStyle, ViewScale)
+oView4.DisplayTangentEdges = True
+oView4.Name = "ISO VIEW"
+oView4.ShowLabel = True
+
+
+'Add BOM for Assemblies
+If oDoc.SubType <> "{E60F81E1-49B3-11D0-93C3-7E0706000000}" Then 
+    'do nothing 
+	Else
+	Dim oBorder As Border = oSheet.Border
+	Dim oBOMpoint As Point2d = oBorder.RangeBox.MaxPoint
+	Dim oPartslist As PartsList = oSheet.PartsLists.Add(oView1, oBOMpoint)
+
+	oPartslist.Style = oDrawingDoc.StylesManager.PartsListStyles.Item("EVE")
+
+	Call oPartslist.Sort("PART No.")
+	oPartslist.Renumber
+'	oPartslist.SaveItemOverridesToBOM
+
+	Dim RePosition As Point2d = oPartslist.Position
+	RePosition.X=34.065
+	oPartslist.Position = RePosition
+
+'	Dim oPartslistCA As PartsListColumn
+'	oPartslistCA = oPartslist.PartsListColumns.Item(1)
+'	oPartslistCA.Width = .8
+'	oPartslistCA = oPartslist.PartsListColumns.Item(2)
+'	oPartslistCA.Width = 3.5
+'	oPartslistCA = oPartslist.PartsListColumns.Item(3)
+'	oPartslistCA.Width = 9.5
+'	oPartslistCA = oPartslist.PartsListColumns.Item(4)
+'	oPartslistCA.Width = .8
+	
+End If
+
+
+'Close model
+ThisDoc.Document.Close(True)
+
+'Process file name and save drawing
+Dim FNamePos As Long = InStrRev(oDoc.FullFileName, "\", -1) 'Get  position of the last backslash
+Dim oDocFN As String = Right(oDoc.FullFileName, Len(oDoc.FullFileName) - FNamePos) 'Get file name
+Dim oDocPS = oDoc.PropertySets.Item("Design Tracking Properties") 'Define the property set
+Dim oDocPN = oDocPS.Item("Part Number").Value 'Define the property
+Dim oPathAndName = Replace(oDoc.FullFileName, oDocFN, oDocPN) 'Replace old file name with iproperty value
+
+oDrawingDoc.SaveAs(oPathAndName & ".dwg", False) 'Save Drawing with same name as model

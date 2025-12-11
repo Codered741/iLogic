@@ -1,0 +1,16 @@
+﻿
+Sub Main
+    If TypeOf ThisDoc.Document Is DrawingDocument Then
+        Dim dwgDoc As DrawingDocument = ThisDoc.Document
+        For Each dwgSheet As Sheet In dwgDoc.Sheets
+            If dwgSheet.DrawingViews.Count > 0 Then
+                modelFile = dwgSheet.DrawingViews(1).ReferencedDocumentDescriptor.FullDocumentName
+                modelDoc = dwgSheet.DrawingViews(1).ReferencedDocumentDescriptor.ReferencedDocument
+                prtNumber = modelDoc.PropertySets("{32853F0F-3444-11D1-9E93-0060B03C1CA6}").ItemByPropId(5).Value
+                If Not String.IsNullOrEmpty(prtNumber) Then
+                    dwgSheet.Name = prtNumber
+                End If
+            End If
+        Next
+    End If
+End Sub

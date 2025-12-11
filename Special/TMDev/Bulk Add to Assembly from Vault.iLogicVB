@@ -1,0 +1,60 @@
+﻿Sub Main()
+	
+
+'-------------GET INPUT LIST-----------------
+
+ListasLongString = InputBox("Enter List of Files separated by spaces e.g. 536945 536928", "Enter List of Files to Add", "")
+
+Dim SearchList As New List(Of String)
+'specify word splitting characters "space" and "dash"
+Dim Separators() As Char = {" "c, "-"c} 
+Words = ListasLongString.Split(Separators)
+For Each wrd In Words
+SearchList.Add(wrd)
+Next
+
+
+
+
+'------------FIND FILES---------------	
+Dim mVaultFiles As List(Of String)
+Dim mModelFiles As New List(Of String)
+
+For Each SearchTerm As String In SearchList
+		
+
+'Build one to many name/value pairs of Property/Value as search criteria;
+Dim mSearchParams As New System.Collections.Generic.Dictionary(Of String, String) 'add UDP.DisplayName, Value Pairs
+mSearchParams.Add("Part Number", SearchTerm)
+
+'the list of downloaded files
+mVaultFiles = iLogicVault.GetFilesBySearchCriteria(mSearchParams, False, False)  'the default for optional parameter MatchAllCriteria = false, CheckOut = true, searching all folders
+If mVaultFiles.Count = 0 Then
+	Logger.Error("File " & SearchTerm & " was not found. Check File Exists and Add Manually.")
+End If
+
+'Filter Only ipt and iam
+For Each mVaultFile As String In mVaultFiles
+	If mVaultFile.Contains(".ipt") Or mVaultFile.Contains(".iam") Then 	mModelFiles.Add(mVaultFile)
+Next
+
+Next
+
+
+
+'-------------ADD TO ASSEMBLY----------
+
+For Each mModelFile As String In mModelFiles
+	Dim componentA = Components.Add("", mModelFile, position := Nothing, grounded := False, visible := True, appearance := Nothing)
+	Next
+
+
+End Sub
+
+
+'UsefulCode for Displaying the List
+	'Dim mFileList As String
+	'For Each mFile As String In mVaultFiles
+		'mFileList += mFile & vbCr
+	'Next
+'MessageBox.Show(mFileList,"List of all Files Found")

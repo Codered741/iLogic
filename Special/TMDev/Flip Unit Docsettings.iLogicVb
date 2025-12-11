@@ -1,0 +1,43 @@
+﻿ 'Enumerators:
+'oLengthType = 11269 'Millimeters
+'oLengthType = 11272 'Inches
+'oLengthType = 11273 'Foot
+'oLengthType = 11268 'Centrimeters
+'oLengthType = 11270 'Metres
+'oLengthType = 11271 'Micron
+'oMassType = 11283 'Kilograms
+'oMassType = 11285 'Slug
+'oMassType = 11286 'lbs
+'oMassType = 11284 'Grams
+ Sub Main()
+	 
+
+Dim doc = ThisDoc.Document	 
+
+'Exit if Drawing file
+If doc.DocumentType = 12292 Then
+Return
+End If
+
+Dim CurrentUnitEnum As String = doc.UnitsOfMeasure.LengthUnits
+Dim IsCurrentlyInch As Boolean = False
+Dim CurrentTypeinWords As String = "Metric"
+If CurrentUnitEnum = 11272 Then IsCurrentlyInch = True
+If CurrentUnitEnum = 11272 Then CurrentTypeinWords = "Imperial"
+
+ 
+'get input from user
+ oUnit = InputRadioBox("Current is " & CurrentTypeinWords, "Metric", "Imperial", IsCurrentlyInch, "Select Desired Units Type")
+	  	 
+
+     If oUnit = True
+		doc.UnitsOfMeasure.LengthUnits = 11269
+		doc.UnitsOfMeasure.MassUnits = 11283
+	 End If
+	If oUnit = False
+		 doc.UnitsOfMeasure.LengthUnits = 11272
+		doc.UnitsOfMeasure.MassUnits = 11286
+	 End If
+				
+End Sub
+			
