@@ -20,7 +20,12 @@ Sub Main()
 	'If the User Presses YES
 	If AskCreateDrawing = vbYes Then 'AndAlso iProperties.Value("Custom", "HasDwg") = False Then
 		
-		Try
+		'Try
+		
+			modelDoc = ThisApplication.ActiveDocument
+			oProps = modelDoc.PropertySets.Item("Design Tracking Properties")
+			oPN = oProps.Item("Part Number").Value
+						
 			'read in the path to the templates and test that it Exists
 			dim strTemplatesPath as String = "C:\_vaultWIP\Designs\Templates\"  'getTemplatesFolderPath()
 			'messagebox.show(strTemplatesPath)
@@ -28,21 +33,37 @@ Sub Main()
 				MessageBox.Show("Error getting the path to the Templates location.  Exiting", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
 				Exit sub
 			End if
-				
-			iProperties.Value("Custom", "HasDwg") = True
-			iProperties.Value("Custom", "DETAILER") = ThisApplication.UserName
-			iProperties.Value("Project", "Creation Date") = DateString
+			
+			If modelDoc.ComponentDefinition.Type = kAssemblyComponentDefinitionObject Then
+				If modelDoc.ComponentDefinition.IsiAssemblyMember = False Then
+					'iProperties.Value("Custom", "HasDwg") = True
+					iProperties.Value("Custom", "DETAILER") = ThisApplication.UserName
+					iProperties.Value("Project", "Creation Date") = DateString
+				Else
+					MessageBox.Show("This file is an iAssembly Member and properties cannot be added.  Please check the table of the factory part, and make sure the properties are filled out correctly. ", "iPart/iAssembly", MessageBoxButtons.OK)	
+				End If
+			Else if modelDoc.ComponentDefinition.Type = kPartComponentDefinitionObject Then
+				If modelDoc.ComponentDefinition.IsiPartMember = False And modelDoc.ComponentDefinition.IsContentMember = False Then
+					'iProperties.Value("Custom", "HasDwg") = True
+					iProperties.Value("Custom", "DETAILER") = ThisApplication.UserName
+					iProperties.Value("Project", "Creation Date") = DateString
+				Else
+					MessageBox.Show("This file is an iPart Member and properties cannot be added.  Please check the table of the factory part, and make sure the properties are filled out correctly. ", "iPart/iAssembly", MessageBoxButtons.OK)	
+				End If
+			End If
 			
 			
 			Dim uTemp as String
 			Dim Template as String
 			Dim TemplateList as New List(of String)
-			TemplateList.Add("TAIT")
-			TemplateList.Add("HKDL CSS")
-			TemplateList.Add("Universal SM Japan")
-			TemplateList.Add("Universal SM Hollywood")
-			TemplateList.Add("Universal SM Florida")
+			TemplateList.Add("TAIT US")
+			' TemplateList.Add("HKDL CSS")
+			' TemplateList.Add("Universal SM Japan")
+			' TemplateList.Add("Universal SM Hollywood")
+			' TemplateList.Add("Universal SM Florida")
 			TemplateList.Add("TAIT UK")
+			TemplateList.Add("DISN PORTER")
+			
 			
 			'Prompt user to select template
 			uTemp = InputListBox("Please select the template you would like to use: ", TemplateList, TemplateList(0), Title:= "Select Template", ListName := "Available Templates")
@@ -57,16 +78,18 @@ Sub Main()
 			Select Case uTemp
 				Case  TemplateList(0)
 					Template = strTemplatesPath + "TT_Part.dwg"
+				' Case TemplateList(1)
+					' Template = strTemplatesPath + "Disney\HKDL CSS Part Template.dwg"
+				' Case TemplateList(2)
+					' Template = strTemplatesPath + "Universal\US_JAPAN\_USJ_STANDARD TEMPLATE_SIZE B_11x17.dwg"
+				' Case TemplateList(3)
+					' Template = strTemplatesPath + "Universal\US_HOLLYWOOD\_USH_STANDARD TEMPLATE_SIZE B_11x17.dwg"
+				' Case TemplateList(4)
+					' Template = strTemplatesPath + "Universal\US_FLORIDA\_USF_STANDARD TEMPLATE_SIZE B_11x17.dwg"
 				Case TemplateList(1)
-					Template = strTemplatesPath + "Disney\HKDL CSS Part Template.dwg"
-				Case TemplateList(2)
-					Template = strTemplatesPath + "Universal\US_JAPAN\_USJ_STANDARD TEMPLATE_SIZE B_11x17.dwg"
-				Case TemplateList(3)
-					Template = strTemplatesPath + "Universal\US_HOLLYWOOD\_USH_STANDARD TEMPLATE_SIZE B_11x17.dwg"
-				Case TemplateList(4)
-					Template = strTemplatesPath + "Universal\US_FLORIDA\_USF_STANDARD TEMPLATE_SIZE B_11x17.dwg"
-				Case TemplateList(5)
 					Template = strTemplatesPath + "Metric\UK TEST BORDER.dwg"
+				Case TemplateList(2)
+					Template = strTemplatesPath + "Disney\160398 PORTER DRAWING - INCH.dwg"		
 			End Select
 
 			'prompt user to auto scale
@@ -77,7 +100,12 @@ Sub Main()
 			Dim DrawingViewScale 'As Double
 			
 			If uScale = True Then
-				DrawingViewScale = 4/iProperties.Value("Custom", "LENGTH")
+				If Not iProperties.Value("Custom", "LENGTH") = "" Then
+					DrawingViewScale = 4/iProperties.Value("Custom", "LENGTH")
+				Else
+					MessageBox.Show("The LENGTH property is empty.  Setting Scale to 1:1", "No LENGTH provided", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+					DrawingViewScale = 1
+				End If
 			Else 
 			viewScale:
 				DrawingViewScale = InputBox("Enter Scale", "Scale", "1")
@@ -86,70 +114,68 @@ Sub Main()
 				End if
 				
 				If Not Double.TryParse(DrawingViewScale, 1.1) Then 'ShowNumber.Length = 6 Then
-					MsgBox("The scale value must be a decimal number (double), like 0.15 .  ")
+					MsgBox("The scale value must be a decimal number (double), like 0.15 ")
 					Goto viewScale
 				End If
 			End If
 			
-			Dim ModelDocName As String 
-			ModelDocName = ThisDoc.FileName(False) 'without extension
-			
-			ModelDwgDoc = CreateDrawing_PlaceViews(ModelDocName, DrawingViewScale, Template, "Top_Right_Project", oBaseView, oRightSideView, oProjectView, oView4)
-			Dim oBW as Double
-			Dim oBH As Double
-			oBW = oBaseView.Width
-			oBH = oBaseView.Height
+			'Dim ModelDocName As String 
+			'ModelDocName = ThisDoc.FileName(False) 'without extension				
+
+			oDwgDoc = CreateDrawing_PlaceViews(modelDoc, DrawingViewScale, Template, "Top_Right_Project", oBaseView, oRightSideView, oProjectView, oView4)
+			'Dim oBW as Double
+			'Dim oBH As Double
+			'oBW = oBaseView.Width
+			'oBH = oBaseView.Height
 			'MsgBox(oBW & " x " & oBH)
 			
-			
-			
-			'CreateOverallDimension (ModelDwgDoc, oBaseView, YDIM, "Vertical", 0.75, "Left", False)
+			'CreateOverallDimension (oDwgDoc, oBaseView, YDIM, "Vertical", 0.75, "Left", False)
 
 			' ChuteTop = FindCurve (Assem_DrawingDoc, oBaseView, oBW, "Horizontal", "Top")
 			' MsgBox("1")
 			' FlangeEdge = FindCurve (Assem_DrawingDoc, oBaseView, oBH, "Vertical", "Right")
 			' CreateOverallDimension(ModelDrawingDoc, "Vertical", "Right", ChuteTop, "Top", FlangeEdge, "Right", 0.5)
 			
-			'CreateLinearDimension (ModelDwgDoc, oBaseView, YDIM, "Vertical", 0.75, "Left", False)
+			'CreateLinearDimension (oDwgDoc, oBaseView, YDIM, "Vertical", 0.75, "Left", False)
 
-			'CreateLinearDimension (ModelDwgDoc, oBaseView, iProperties.Value("Custom", "WIDTH"), "Horizontal", -0.75, "Bottom", True)
+			'CreateLinearDimension (oDwgDoc, oBaseView, iProperties.Value("Custom", "WIDTH"), "Horizontal", -0.75, "Bottom", True)
 			
-			'CreateLinearDimension (ModelDwgDoc, oRightSideView, iProperties.Value("Custom", "THICKNESS"), "Horizontal", 0.75, "Left", True)
-			
+			'CreateLinearDimension (oDwgDoc, oRightSideView, iProperties.Value("Custom", "THICKNESS"), "Horizontal", 0.75, "Left", True)
 			
 			'Save As oDrawingDoc (Path and File Name)
-			oPartPath = ThisDoc.Path
+			oPartPath = ThisDoc.Path 'Left(modelDoc.FullDocumentName, modelDoc.FullDocumentName.Length - modelDoc.FullFileName.Length)
+
 			oPartPathLength = Len(oPartPath)
 			oDrawingPath = Left(oPartPath, oPartPathLength)
 			
-			oDrawingDoc = oDrawingPath & "\" & ModelDocName & ".dwg" 
+			'oDrawingDoc = oDrawingPath & "\" & oPN & ".dwg" 
 				
-			ModelDwgDoc.SaveAs(oDrawingDoc, False)
+			oDwgDoc.SaveAs(oDrawingPath & "\" & oPN & ".dwg", False)
+			
 			'Close the Template Drawing
-			ModelDwgDoc.Close(True)
+			'oDwgDoc.Close(True)
 			'Open the Newly Saved Drawing
-			DrawingDoc = ThisApplication.Documents.Open(oDrawingDoc, True)
-		Catch
-			MessageBox.Show("An error has occured.  Please try again", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-			Exit sub
-		End try	
+			'DrawingDoc = ThisApplication.Documents.Open(oDrawingDoc, True)
+		'Catch
+			'MessageBox.Show("An error has occured.  Please try again", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+			'Exit sub			If uTemp = TemplateList(1) Then
+		'End try	
 	End If
 
 End Sub
 
-Function CreateDrawing_PlaceViews (PartNumber As String, DrawingViewScale As Double, TemplatePath as String, ViewsToPlace As String, ByRef oBaseView As DrawingView, ByRef oView2 As DrawingView, ByRef oView3 As DrawingView, ByRef oView4 As DrawingView)
+Function CreateDrawing_PlaceViews (oPartDoc as Document, DrawingViewScale As Double, TemplatePath as String, ViewsToPlace As String, ByRef oBaseView As DrawingView, ByRef oView2 As DrawingView, ByRef oView3 As DrawingView, ByRef oView4 As DrawingView)
 
 	Dim oDrawDoc As DrawingDocument
-	Dim oPartDoc As Document
+	'Dim oPartDoc As Document
 	Dim oSheet As Sheet
 	Dim oTG As TransientGeometry
 	Dim oPoint1 As Point2d
 	Dim oPoint2 As Point2d
 	Dim oPoint3 As Point2d
 	
-	oPartDoc = ThisDoc.Document
+	'oPartDoc = ThisDoc.Document
 	oDrawDoc = ThisApplication.Documents.Add(kDrawingDocumentObject, TemplatePath, True)
-
 	
 	oSheet = oDrawDoc.Sheets.Item(1)
 	oTG = ThisApplication.TransientGeometry
@@ -169,7 +195,7 @@ Function CreateDrawing_PlaceViews (PartNumber As String, DrawingViewScale As Dou
 	
 	Dim uViewStyle As String
 	
-	uViewStyle = InputListBox("Select View Style", ViewStyles, ViewStyles(1), "Drawing View Style", "Select One")
+	uViewStyle = ViewStyles(1) 'InputListBox("Select View Style", ViewStyles, ViewStyles(1), "Drawing View Style", "Select One")
 	
 	Dim ViewStyle As DrawingViewStyleEnum
 	
@@ -188,6 +214,26 @@ Function CreateDrawing_PlaceViews (PartNumber As String, DrawingViewScale As Dou
 	'kHiddenLineRemovedDrawingViewStyle = 32258
 	'kShadedDrawingViewStyle = 32259
 	'kShadedHiddenLineDrawingViewStyle = 32261
+	Dim oFlatViewOptions as NameValueMap
+
+	If oPartDoc.SubType = "{9C464203-9BAE-11D3-8BAD-0060B0CE6BB4}" Then
+		oFlatViewOptions = ThisApplication.TransientObjects.CreateNameValueMap
+		oFlatViewOptions.Add("SheetMetalFoldedModel", False)
+		Try
+			FlatView = oSheet.DrawingViews.AddBaseView(oPartDoc, oTG.CreatePoint2d(20, 15), DrawingViewScale, kFrontViewOrientation, ViewStyle, "Default", , oFlatViewOptions)
+			FlatView.ShowLabel = True
+			FlatView.Name = "FLAT PATTERN"
+		Catch
+		
+			MessageBox.Show("An Error occurred when attempting to create a flat pattern.  The rule cannot continue.  Please correct the error and create a flat pattern manually, then try again.  ", _
+			"Flat pattern error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+
+			oDrawDoc.Close(False)
+			
+			Exit Function
+			
+		End Try	
+	End If
 	
 	'Create the Base View
 	oBaseView = oSheet.DrawingViews.AddBaseView(oPartDoc, oPoint1, DrawingViewScale, kFrontViewOrientation, ViewStyle, "Default")
