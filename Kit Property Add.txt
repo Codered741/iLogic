@@ -24,7 +24,7 @@ Else
 		End Try
 	Next
 	
-	Dim oCompDef as ComponentDefinition = oDoc.ComponentDefinition
+	Dim oCompDef as AssemblyComponentDefinition = oDoc.ComponentDefinition
 	
 	'DesignLevel
 	Try 
