@@ -149,8 +149,11 @@ Sub Main()
 			oDrawingPath = Left(oPartPath, oPartPathLength)
 			
 			'oDrawingDoc = oDrawingPath & "\" & oPN & ".dwg" 
-				
-			oDwgDoc.SaveAs(oDrawingPath & "\" & oPN & ".dwg", False)
+			Try
+				oDwgDoc.SaveAs(oDrawingPath & "\" & oPN & ".dwg", False)
+			Catch
+				MessageBox.Show("Unable to save file.  Check that a drawing does not already exist.  ", "File Save Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+			End Try
 			
 			'Close the Template Drawing
 			'oDwgDoc.Close(True)
