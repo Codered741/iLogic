@@ -2,8 +2,10 @@
 
 
 'Logic: 
+'prompt user for standard
 'prompt user for length
 'prompt user for width
+'prompt user for single or center Split
 'generate member names 
 'change members of each entry
 	' Shell
@@ -15,22 +17,25 @@
 	' Boxes
 	
 sub Main()
-	Dim pLong as String
-	Dim pWide as String
-	Dim stdSel as New List(of String)
-	Dim std as String
+	Dim pLong As String
+	Dim pWide As String
+	Dim stdSel As New List(of String)
+	Dim pStd As String
+	Dim std As String
 	
 	stdSel.Add("US")
 	stdSel.Add("UK")
 	
-	std = InputListBox("Please select the Standard you would like to use: ", stdSel, stdSel(0), Title:= "Select Units", ListName := "Units")
+	pStd = InputListBox("Please select the Standard you would like to use: ", stdSel, stdSel(0), Title:= "Select Units", ListName := "Units")
 	
-	If std = "US" Then
+	If pStd = stdSel(0) Then
 		std = ""
 		parameter("EndFrameOffset") = "1 in"
-	Else 
+		WallTube = 1.5 'inches
+	Else If pStd = stdSel(1)
 		std = "UK "
 		parameter("EndFrameOffset") = "25 mm"
+		WallTube = 40 'mm
 	End If
 		
 		
@@ -74,20 +79,55 @@ sub Main()
 		longList.Add(150)
 	End If
 	
+
 	'Prompt User for desired Length
-	pLong = InputListBox("Please select the desired cart length: ", longList, "45", Title:= "Select Dolly Length", ListName := "Available Lengths")
+	pLong = InputListBox("Please select the desired cart length: ", longList, wideList(1), Title:= "Select Dolly Length", ListName := "Available Lengths")
+
+	Dim typeList as New List(Of String)
+	typeList.Add("Center Split")
+	typeList.Add("Single Side")
+	
+	pType = InputListBox("Select desired Wall position: ", typeList, typeList(0), Title:= "Select wall type", ListName := "Available Types")
 
 	iPart.ChangeRow("Base", std & "Dolly Base " & pWide & " inch x " & pLong & " inch - 3x8")
 	iPart.ChangeRow("Front End Frame", std & "Dolly End Frame Config - " & pWide)
 	iPart.ChangeRow("Back End Frame", std & "Dolly End Frame Config - " & pWide)
-	iPart.ChangeRow("Center Wall", std & "Dolly Center Wall CS-SOS 62 in tall - " & pLong & " in")	
-	iPart.ChangeRow("Top Right Shelf", std & "Dolly Frame Top+Half Shelf Center Split - " & pWide & " in x " & pLong & " in")
-	iPart.ChangeRow("Top Left Shelf", std & "Dolly Frame Top+Half Shelf Center Split - " & pWide & " in x " & pLong & " in")
-	iPart.ChangeRow("Left Half Shelf", std & "Dolly Frame Top+Half Shelf Center Split - " & pWide & " in x " & pLong & " in")
-	iPart.ChangeRow("Left Full Shelf", std & "Dolly Frame Full Shelf Center Split - " & pWide & " in x " & pLong & " in") 'Dolly Frame Full Shelf Center Split - 45 in x 96 in
 	
-	'Dolly wood is not different from US to UK
-	iPart.ChangeRow("Base Wood", "Dolly Wood " & pWide & " inch x " & pLong & " inch Center Split") 'Dolly Wood 45 inch x 96 inch Center Split
+	If pType = typeList(0) 'Center Split
+		
+		iPart.ChangeRow("Center Wall", std & "Dolly Center Wall CS-SOS 62 in tall - " & pLong & " in")
+		iPart.ChangeRow("Top Right Shelf", std & "Dolly Frame Top+Half Shelf Center Split - " & pWide & " in x " & pLong & " in")
+		
+		Component.IsActive("Top Left Shelf") = True
+		Component.IsActive("Left Half Shelf") = True
+		Component.IsActive("Left Full Shelf") = True
+		iPart.ChangeRow("Top Left Shelf", std & "Dolly Frame Top+Half Shelf Center Split - " & pWide & " in x " & pLong & " in")
+		iPart.ChangeRow("Left Half Shelf", std & "Dolly Frame Top+Half Shelf Center Split - " & pWide & " in x " & pLong & " in")
+		iPart.ChangeRow("Left Full Shelf", std & "Dolly Frame Full Shelf Center Split - " & pWide & " in x " & pLong & " in") 'Dolly Frame Full Shelf Center Split - 45 in x 96 in
+		iPart.ChangeRow("Base Wood", "Dolly Wood " & pWide & " inch x " & pLong & " inch Center Split") 'Dolly Wood 45 inch x 96 inch Center Split
+		
+		Parameter("CenterWallOffset") = "0 in"
+		
+	Else If pType = typeList(1) 'Single Side
+	
+		iPart.ChangeRow("Center Wall", std & "Dolly Center Wall Side 62 in tall - " & pLong & " in")
+		iPart.ChangeRow("Top Right Shelf", std & "Dolly Frame Top+Half Shelf Single Side - " & pWide & " in x " & pLong & " in")
+		
+		Component.IsActive("Top Left Shelf") = False
+		Component.IsActive("Left Half Shelf") = False
+		Component.IsActive("Left Full Shelf") = False
+		
+		iPart.ChangeRow("Base Wood", "Dolly Wood " & pWide & " inch x " & pLong & " inch Single Side") 'Dolly Wood 45 inch x 96 inch Center Split
+	
+		Parameter("CenterWallOffset") = ((pWide/2)-(WallTube/2)) & " in"
+		
+	Else
+	
+		MsgBox("Incorrect List Setup.  Contact the Digital Design Tools team for assistance.  ")
+		
+	End If
+	
+	
 	
 	If pWide < 60 Then
 		iPart.ChangeRow("Front Hangar A", std & "Dolly Tube Hanger A " & pWide & " inch")
@@ -99,10 +139,25 @@ sub Main()
 	End If
 	
 	If pWide <= 60 Then	
-		iPart.ChangeRow("Top Box", "Dolly Top Box - " & pWide & " in x " & pLong & " in")  
-		iPart.ChangeRow("Middle Box", "Dolly Middle Box - " & pWide & " in x " & pLong & " in")
-		iPart.ChangeRow("Bottom Box 1", "Dolly Bottom Box - " & pWide & " in x " & pLong & " in")
-		iPart.ChangeRow("Bottom Box 2", "Dolly Bottom Box - " & pWide & " in x " & pLong & " in")
+		If pType = typeList(0)
+			iPart.ChangeRow("Top Box", "Dolly Top Box - " & pWide & " in x " & pLong & " in")  
+			
+			Component.IsActive("Middle Box") = True
+			Component.IsActive("Bottom Box 1") = True
+			Component.IsActive("Bottom Box 2") = True
+			iPart.ChangeRow("Middle Box", "Dolly Middle Box - " & pWide & " in x " & pLong & " in")
+			iPart.ChangeRow("Bottom Box 1", "Dolly Bottom Box - " & pWide & " in x " & pLong & " in")
+			iPart.ChangeRow("Bottom Box 2", "Dolly Bottom Box - " & pWide & " in x " & pLong & " in")
+		Else 
+			iPart.ChangeRow("Top Box", "Dolly Top Box - " & pWide & " in x " & pLong & " in")  
+			iPart.ChangeRow("Middle Box", "Dolly Middle Box - " & pWide & " in x " & pLong & " in")
+			iPart.ChangeRow("Bottom Box 1", "Dolly Bottom Box - " & pWide & " in x " & pLong & " in")
+			iPart.ChangeRow("Bottom Box 2", "Dolly Bottom Box - " & pWide & " in x " & pLong & " in")
+			Component.IsActive("Middle Box") = False
+			Component.IsActive("Bottom Box 1") = False
+			Component.IsActive("Bottom Box 2") = False
+			
+		End If
 	Else 
 		MessageBox.Show("Boxes for Dollies greater than 60 in do not exist.  Remaining parts will be changed.  " )
 	End If
