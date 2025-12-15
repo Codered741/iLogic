@@ -135,8 +135,8 @@ Sub Main()
 							Goto FSErr
 						End Try
 						'CommandManager VaultCheckIn
-						oCommandMgr.ControlDefinitions.Item("VaultCheckIn").Execute2(false)
-						System.Windows.Forms.SendKeys.SendWait(Chr(9) & vbCrLf)
+						oCommandMgr.ControlDefinitions.Item("VaultCheckIn").Execute'2(false)
+						'System.Windows.Forms.SendKeys.SendWait(Chr(9) & vbCrLf)
 						dwgDoc.Close(false)	
 	FSErr:						
 					End If
